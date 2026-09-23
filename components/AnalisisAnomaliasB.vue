@@ -759,7 +759,7 @@ watch(episodioSeleccionado, (id) => {
 }, { immediate: true });
 // Control por voz (agente): modo de vista y sensores seleccionados.
 // `seleccionar`: 'todos' | 'ninguno' | lista de slugs (endpoint) de sensores.
-useOrdenUI('anomalias', ({ bomba, modo, seleccionar }) => {
+useOrdenUI('anomalias', async ({ bomba, modo, seleccionar, principal, comparar, agregar, quitar, margen, episodio }) => {
   if (bomba !== 'B') return undefined;
   // Vista recién montada: esperar a que carguen las alertas (el emisor reintenta).
   if (isLoadingAlertas.value) return undefined;
@@ -774,10 +774,41 @@ useOrdenUI('anomalias', ({ bomba, modo, seleccionar }) => {
   } else if (modoVista.value !== 'conjunto' && sensoresActivos.value.length === 0) {
     seleccionarTodos();
   }
+  // --- Modo Conjunto: principal, episodio, margen y sensores a comparar ---
+  if (modoVista.value === 'conjunto') {
+    const mismo = (a, b) => normalizarSensor(a) === normalizarSensor(b);
+    if (principal) {
+      const k = sensoresConAnomalias.value.find((x) => mismo(x, principal));
+      if (k) sensorPrincipalConjunto.value = k;
+    }
+    if (margen) {
+      const cercano = opcionesMargen.reduce((a, b) => (Math.abs(b.valor - margen) < Math.abs(a.valor - margen) ? b : a));
+      margenMinutos.value = cercano.valor;
+    }
+    // Esperar a que se elija el episodio y a la precarga automática de
+    // sensores simultáneos, para aplicar encima lo que pidió el usuario.
+    await new Promise((r) => setTimeout(r, 350));
+    if (episodio === 'anterior' || episodio === 'reciente') {
+      const lista = episodiosSensorPrincipal.value;
+      const i = lista.findIndex((e) => e.id === episodioSeleccionado.value);
+      if (episodio === 'anterior' && i < lista.length - 1) episodioSeleccionado.value = lista[i + 1].id;
+      if (episodio === 'reciente' && lista[0]) episodioSeleccionado.value = lista[0].id;
+      await new Promise((r) => setTimeout(r, 350));
+    }
+    const principalActual = sensorPrincipalConjunto.value;
+    const limpiar = (lista) => [...new Set(lista)].filter((x) => !principalActual || !mismo(x, principalActual));
+    if (Array.isArray(comparar)) sensoresCompararActivos.value = limpiar(comparar);
+    if (Array.isArray(agregar)) sensoresCompararActivos.value = limpiar([...sensoresCompararActivos.value, ...agregar]);
+    if (Array.isArray(quitar)) sensoresCompararActivos.value = sensoresCompararActivos.value.filter((x) => !quitar.some((q) => mismo(q, x)));
+  }
+
   const nombres = (lista) => lista.map((k) => buscarConfigSensor(k).label).join(', ') || 'ninguno';
   return `Anomalías Bomba B: modo ${modoVista.value}. Sensores con anomalías: ${nombres(sensoresConAnomalias.value)}. ` +
     (modoVista.value === 'conjunto'
-      ? `Principal en conjunto: ${sensorPrincipalConjunto.value ? buscarConfigSensor(sensorPrincipalConjunto.value).label : 'ninguno'}.`
+      ? `Conjunto: principal ${sensorPrincipalConjunto.value ? buscarConfigSensor(sensorPrincipalConjunto.value).label : 'ninguno'}, ` +
+        `comparado con ${nombres(sensoresCompararActivos.value)}, margen ±${margenMinutos.value} min, ` +
+        `episodio ${episodiosSensorPrincipal.value.find((e) => e.id === episodioSeleccionado.value)?.etiqueta ?? 'ninguno'} ` +
+        `(${episodiosSensorPrincipal.value.length} episodios del principal).`
       : `Seleccionados: ${nombres(sensoresActivos.value)}.`);
 });
 </script>

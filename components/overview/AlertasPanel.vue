@@ -243,12 +243,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, nextTick } from "vue";
 import { useAlertas } from "@/composables/useAlertas";
 import { useBombaActiva } from "@/composables/useBombaActiva";
 import { esSensorGeneral } from "@/config/bombasConfig";
 import { buscarTagSensor } from "@/config/sensoresAnomaliasConfig";
 import { useTracking } from "@/composables/useTracking";
+import { useOrdenUI } from "@/composables/useControlUI";
 
 const props = defineProps({
   isDarkMode: {
@@ -482,4 +483,30 @@ const formatearFecha = fechaStr => {
     return fechaStr;
   }
 };
+// Control por voz (agente): filtros, período y página del panel.
+const FILTRO_POR_NIVEL = { todos: 'TODOS', critica: 'CRITICAL', alerta: 'ALERT', aviso: 'AVISO' };
+const NOMBRE_FILTRO = { TODOS: 'todas', CRITICAL: 'críticas', ALERT: 'alertas', AVISO: 'avisos' };
+useOrdenUI('panel_alertas', async ({ nivel, dias, pagina }) => {
+  if (dias) {
+    // Opción del selector más cercana a lo pedido
+    const cercana = opcionesPeriodo.reduce((a, b) => (Math.abs(b.valor - dias) < Math.abs(a.valor - dias) ? b : a));
+    diasSeleccionado.value = cercana.valor;
+    // La consulta del nuevo período tarda un momento: esperar antes de responder.
+    await nextTick();
+    const limite = Date.now() + 4000;
+    while (isLoading.value && Date.now() < limite) await new Promise((r) => setTimeout(r, 100));
+  }
+  if (nivel && FILTRO_POR_NIVEL[nivel]) filtroActual.value = FILTRO_POR_NIVEL[nivel];
+  await nextTick(); // el cambio de filtro vuelve a la página 1
+  if (pagina === 'siguiente') paginaActual.value = Math.min(paginaActual.value + 1, Math.max(1, totalPaginas.value));
+  else if (pagina === 'anterior') paginaActual.value = Math.max(1, paginaActual.value - 1);
+  else if (typeof pagina === 'number') paginaActual.value = Math.min(Math.max(1, pagina), Math.max(1, totalPaginas.value));
+  await nextTick();
+  const periodo = opcionesPeriodo.find((o) => o.valor === diasSeleccionado.value)?.texto ?? `${diasSeleccionado.value} días`;
+  const visibles = alertasPaginadas.value
+    .map((a) => `${obtenerTipoAlerta(a)} ${a.tipo_sensor} (${formatearFecha(a.timestamp)})`)
+    .join('; ');
+  return `Panel de alertas: ${NOMBRE_FILTRO[filtroActual.value]}, ${periodo}, página ${paginaActual.value} de ${Math.max(1, totalPaginas.value)} ` +
+    `(${alertasFiltradas.value.length} en total). En pantalla: ${visibles || 'ninguna'}.`;
+});
 </script>

@@ -8,6 +8,11 @@ import { construirEstadoPlanta, resumenPantalla } from "./estadoPlanta";
 import { capturarGrafico } from "./capturaGrafico";
 import { enfocarSeccion, resaltar, SECCIONES_FOCO, type SeccionFoco } from "./enfocar";
 import { generarReporte, reporteAbierto, duracionLegible, type ReporteTurno } from "./reporteTurno";
+import { alertasVisibles, escenario } from "~/mock/escenario";
+import { buscarConfigSensor } from "~/config/sensoresAnomaliasConfig";
+import { conocimientoDe } from "~/config/conocimientoSensores";
+import { leerSenal } from "~/mock/simulador";
+import { perfilDe } from "~/mock/perfiles";
 import { correo, enviarBorrador, descartarBorrador, type TipoCorreo } from "./correoAgente";
 
 type Bomba = "A" | "B";
@@ -43,6 +48,17 @@ Correos (solo sobre fallas, alertas o gráficos de la planta):
   de qué trata, y PREGUNTA si lo envías. Llama enviar_correo únicamente después de que el usuario
   diga claramente que sí. Si pide cambios, vuelve a llamar preparar_correo con el motivo ajustado.
 - Si pide algo ajeno a la planta, explica que solo envías correos de fallas, alertas o gráficos.
+
+Paneles y análisis:
+- "Solo las críticas", "alertas de la última semana", "siguiente página" → filtrar_alertas; lo mismo
+  para bitácoras con filtrar_bitacoras. Después di brevemente qué quedó en pantalla.
+- "Abre la crítica de corriente", "muéstrame esa alerta" → abrir_anomalia_alerta.
+- "Compara la corriente con la temperatura del estator", "agrega/quita un sensor", "más margen",
+  "el episodio anterior" → configurar_conjunto.
+
+Conocimiento:
+- "¿Qué es / qué mide X?", "¿por qué subió?", "¿qué hago?", "¿es grave?" → explicar_sensor. Responde con
+  la acción recomendada que corresponda al nivel actual; no inventes procedimientos.
 
 Reporte de turno:
 - "Reporte del turno", "informe", "resumen de las últimas horas" → generar_reporte (8 horas por
@@ -136,6 +152,76 @@ export const HERRAMIENTAS_VOZ = [
         bomba: { type: "string", enum: ["A", "B"], description: "Solo para secciones de anomalías." },
       },
       required: ["seccion"],
+    },
+  },
+  {
+    type: "function",
+    name: "filtrar_alertas",
+    description: "Filtra el panel de alertas de sensores de la visión general por nivel y período, o cambia de página. Lo enfoca en pantalla.",
+    parameters: {
+      type: "object",
+      properties: {
+        nivel: { type: "string", enum: ["todos", "critica", "alerta", "aviso"] },
+        dias: { type: "number", enum: [1, 2, 7, 30, 90], description: "Período en días." },
+        pagina: { type: "string", description: "'siguiente', 'anterior' o un número de página." },
+      },
+    },
+  },
+  {
+    type: "function",
+    name: "filtrar_bitacoras",
+    description: "Filtra el panel de bitácoras de operadores por nivel o cambia de página. Lo enfoca en pantalla.",
+    parameters: {
+      type: "object",
+      properties: {
+        nivel: { type: "string", enum: ["todos", "alerta", "aviso"] },
+        pagina: { type: "string", description: "'siguiente', 'anterior' o un número de página." },
+      },
+    },
+  },
+  {
+    type: "function",
+    name: "abrir_anomalia_alerta",
+    description: "Abre el gráfico de anomalía de una alerta concreta (como el botón 'Ver gráfico de anomalía'), buscándola por sensor y opcionalmente bomba y nivel.",
+    parameters: {
+      type: "object",
+      properties: {
+        sensor: { type: "string", description: "Nombre del sensor de la alerta, p. ej. 'corriente'." },
+        bomba: { type: "string", enum: ["A", "B"] },
+        nivel: { type: "string", enum: ["CRÍTICA", "ALERTA", "AVISO"] },
+      },
+      required: ["sensor"],
+    },
+  },
+  {
+    type: "function",
+    name: "configurar_conjunto",
+    description: "Configura el modo Conjunto del análisis de anomalías: sensor principal (debe tener anomalías), sensores a comparar (cualquiera de la bomba), margen de tiempo y episodio.",
+    parameters: {
+      type: "object",
+      properties: {
+        bomba: { type: "string", enum: ["A", "B"] },
+        principal: { type: "string", description: "Sensor principal (con anomalías)." },
+        comparar: { type: "array", items: { type: "string" }, description: "Reemplaza la lista de sensores a comparar." },
+        agregar: { type: "array", items: { type: "string" }, description: "Sensores a sumar a la comparación." },
+        quitar: { type: "array", items: { type: "string" }, description: "Sensores a sacar de la comparación." },
+        margen_minutos: { type: "number", enum: [30, 120, 360, 1440], description: "Margen alrededor del episodio." },
+        episodio: { type: "string", enum: ["reciente", "anterior"] },
+      },
+      required: ["bomba"],
+    },
+  },
+  {
+    type: "function",
+    name: "explicar_sensor",
+    description: "Explica un sensor: qué mide, por qué importa, causas típicas de desvío, su lectura actual vs umbral, sus alertas recientes y la acción recomendada según el nivel.",
+    parameters: {
+      type: "object",
+      properties: {
+        sensor: { type: "string", description: "Nombre del sensor en lenguaje natural." },
+        bomba: { type: "string", enum: ["A", "B"], description: "Bomba (A por defecto)." },
+      },
+      required: ["sensor"],
     },
   },
   {
@@ -274,6 +360,11 @@ export const ETIQUETAS_HERRAMIENTA: Record<string, string> = {
   cambiar_bomba_operacion: "Cambiando bomba",
   cambiar_tema: "Cambiando tema",
   estado_pantalla: "Revisando pantalla",
+  explicar_sensor: "Consultando conocimiento",
+  filtrar_alertas: "Filtrando alertas",
+  filtrar_bitacoras: "Filtrando bitácoras",
+  abrir_anomalia_alerta: "Abriendo la alerta",
+  configurar_conjunto: "Configurando comparación",
   enfocar: "Enfocando sección",
   consultar_analista: "Consultando al analista",
   preparar_correo: "Preparando correo",
@@ -393,6 +484,17 @@ export const borradorDeReporte = (r: ReporteTurno, para: string[]) => {
   };
 };
 
+// "siguiente" | "anterior" | "3" → valor que entienden los paneles.
+const paginaPedida = (p?: string | number) => {
+  if (p === undefined || p === null || p === "") return undefined;
+  if (typeof p === "number") return p;
+  const t = normalizarTexto(String(p));
+  if (t.startsWith("sig") || t.includes("proxima")) return "siguiente";
+  if (t.startsWith("ant") || t.includes("previa")) return "anterior";
+  const n = parseInt(t, 10);
+  return Number.isFinite(n) ? n : undefined;
+};
+
 type Ejecutor = (args: any) => Promise<string>;
 
 const EJECUTORES: Record<string, Ejecutor> = {
@@ -407,6 +509,82 @@ const EJECUTORES: Record<string, Ejecutor> = {
       return "No hay gráficos de anomalías abiertos todavía; usa ver_anomalias para abrirlos.";
     }
     return ok ? `Mostrando y resaltando la sección ${seccion}.` : `No encontré la sección ${seccion} en pantalla.`;
+  },
+
+  explicar_sensor: async ({ sensor, bomba }) => {
+    const b: Bomba = bomba === "B" ? "B" : "A";
+    const s = resolverSensor(b, sensor);
+    if (!s) return `No reconozco el sensor "${sensor}".`;
+    const k = conocimientoDe(s.endpoint);
+    const partes: string[] = [];
+    if (k) {
+      partes.push(`${k.nombre}: ${k.que_mide} ${k.por_que_importa} Causas típicas: ${k.causas_tipicas.join("; ")}.`);
+    }
+    if (escenario.transmisionInicio !== null) {
+      const { valor, clasificacion } = leerSenal(b, s.endpoint, Date.now());
+      const estado = clasificacion === -1 ? "anómala" : clasificacion === 1 ? "normal" : "sin clasificar";
+      partes.push(`Lectura actual bomba ${b}: ${valor} ${s.unidad} (umbral ${perfilDe(s.endpoint).umbral}), clasificada ${estado}.`);
+    }
+    const alertas = alertasVisibles(1).filter((a) => a.tabla_origen === b && a.tipo_sensor.replace(/[-_]/g, "") === s.endpoint.replace(/[-_]/g, ""));
+    if (alertas.length) {
+      const ultima = alertas[0];
+      partes.push(`Alertas del último día en este sensor: ${alertas.length}; la más reciente es ${ultima.nivel}.`);
+      if (k) partes.push(`Acción recomendada para ${ultima.nivel}: ${k.acciones[ultima.nivel as "AVISO" | "ALERTA" | "CRÍTICA"]}`);
+    } else {
+      partes.push("Sin alertas en el último día para este sensor.");
+      if (k) partes.push(`Si llegara a aviso: ${k.acciones.AVISO}`);
+    }
+    return partes.join(" ");
+  },
+
+  filtrar_alertas: async ({ nivel, dias, pagina }) => {
+    await irA("overview");
+    const r = await emitirOrdenCuandoListo("panel_alertas", { nivel, dias, pagina: paginaPedida(pagina) });
+    await enfocarSeccion("alertas", 1500);
+    return r ?? "No pude filtrar el panel de alertas.";
+  },
+
+  filtrar_bitacoras: async ({ nivel, pagina }) => {
+    await irA("overview");
+    const r = await emitirOrdenCuandoListo("panel_bitacoras", { nivel, pagina: paginaPedida(pagina) });
+    await enfocarSeccion("bitacoras", 1500);
+    return r ?? "No pude filtrar el panel de bitácoras.";
+  },
+
+  abrir_anomalia_alerta: async ({ sensor, bomba, nivel }) => {
+    // Buscar la alerta (más reciente) que calce con sensor / bomba / nivel.
+    const bombas: Bomba[] = bomba ? [bomba] : ["A", "B"];
+    const candidatas = alertasVisibles(30).filter((a) => {
+      const b = a.tabla_origen as Bomba;
+      if (!bombas.includes(b) || (nivel && a.nivel !== nivel)) return false;
+      const s = resolverSensor(b, sensor);
+      return !!s && s.endpoint.replace(/[-_]/g, "") === a.tipo_sensor.replace(/[-_]/g, "");
+    });
+    const alerta = candidatas[0];
+    if (!alerta) return `No encontré alertas${nivel ? ` ${nivel}` : ""} de ${sensor}${bomba ? ` en la bomba ${bomba}` : ""}.`;
+    const b = alerta.tabla_origen as Bomba;
+    const r = await EJECUTORES.ver_anomalias({ bomba: b, modo: "individual", sensores: [sensor] });
+    const n = escenario.anomalias.find((x) => x.id === alerta.id)?.ocurrencia ?? 1;
+    const hora = new Date(alerta.timestamp).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+    return `${r} Alerta ${alerta.nivel} de ${buscarConfigSensor(alerta.tipo_sensor).label} (bomba ${b}) a las ${hora}, ${n}.ª detección en ese sensor.`;
+  },
+
+  configurar_conjunto: async ({ bomba, principal, comparar, agregar, quitar, margen_minutos, episodio }) => {
+    const b: Bomba = bomba === "B" ? "B" : "A";
+    const aSlugs = (lista?: string[]) => (lista ? resolverLista(b, lista).sensores.map((x) => x.endpoint) : undefined);
+    await irA(b === "A" ? "anomaliasA" : "anomaliasB");
+    const r = await emitirOrdenCuandoListo("anomalias", {
+      bomba: b,
+      modo: "conjunto",
+      principal: principal ? resolverSensor(b, principal)?.endpoint : undefined,
+      comparar: aSlugs(comparar),
+      agregar: aSlugs(agregar),
+      quitar: aSlugs(quitar),
+      margen: margen_minutos,
+      episodio,
+    });
+    if (r) await enfocarSeccion("anomalias_graficos", 3000);
+    return r ?? "No pude configurar el modo conjunto.";
   },
 
   mostrar_senales: async ({ bomba, sensores, ocultar_otras }) => {

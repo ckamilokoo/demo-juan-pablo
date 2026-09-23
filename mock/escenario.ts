@@ -3,6 +3,7 @@
 // recargar la página.
 import { buscarConfigSensor } from '~/config/sensoresAnomaliasConfig';
 import { perfilDe, normalizarSlug } from './perfiles';
+import { conocimientoDe } from '~/config/conocimientoSensores';
 
 export type Bomba = 'A' | 'B';
 export type NivelAlerta = 'CRÍTICA' | 'ALERTA' | 'AVISO';
@@ -98,6 +99,10 @@ export const ACCIONES: Record<NivelAlerta, string> = {
   'AVISO': 'Seguir la tendencia; sin acción inmediata.',
 };
 
+/** Acción recomendada específica del sensor y nivel; genérica por nivel si no hay. */
+export const accionRecomendada = (sensor: string, nivel: NivelAlerta) =>
+  conocimientoDe(sensor)?.acciones[nivel] ?? ACCIONES[nivel];
+
 const descripcion = (a: Anomalia): string => {
   const cfg = buscarConfigSensor(a.sensor);
   const p = perfilDe(a.sensor);
@@ -108,7 +113,7 @@ const descripcion = (a: Anomalia): string => {
     `${prefijo} - BOMBA ${a.bomba}: ${cfg.label} ${sentido} el umbral ` +
     `(pico ${pico.toFixed(p.decimales)} ${cfg.unit}, umbral ${p.umbral} ${cfg.unit}). ` +
     `Patrón anómalo detectado por el modelo (${a.ocurrencia}.ª detección en este sensor). ` +
-    `Acción recomendada: ${ACCIONES[a.nivel]}`
+    `Acción recomendada: ${accionRecomendada(a.sensor, a.nivel)}`
   );
 };
 

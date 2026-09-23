@@ -8,6 +8,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { StateGraph, MessagesAnnotation, START, END } from "@langchain/langgraph";
 import { ToolNode, toolsCondition } from "@langchain/langgraph/prebuilt";
 import { z } from "zod";
+import { CONOCIMIENTO_SENSORES } from "../../config/conocimientoSensores";
 
 // Formato de agente/estadoPlanta.ts (se valida por forma, no por tipo compartido).
 export interface EstadoPlanta {
@@ -30,7 +31,8 @@ Reglas:
 - Usa SIEMPRE las herramientas para obtener datos; no inventes valores.
 - Responde en español, en 2 a 4 frases, sin listas, sin markdown ni tablas; redondea a 1 decimal.
 - Prioriza lo crítico: nombra sensor, bomba, valor vs umbral y qué significa.
-- Si corresponde, termina con una recomendación operativa concreta.
+- Si corresponde, termina con una recomendación operativa concreta, tomada de conocimiento_sensor
+  para el nivel de la alerta (no inventes procedimientos).
 - "Alertas" son detecciones automáticas de sensores; "bitácoras" son registros escritos por operadores.
   No las mezcles: usa listar_bitacoras para bitácoras y listar_alertas para alertas.
 - Niveles: cada sensor escala por su propio contador (1.ª detección aviso, 2.ª alerta, 3.ª+ crítica).
@@ -119,6 +121,25 @@ const crearHerramientas = (estado: EstadoPlanta) => [
       description:
         "Bitácoras operacionales escritas por los operadores (panel 'Bitácoras de alertas y avisos'), más recientes primero. Distintas de las alertas de sensores.",
       schema: z.object({ nivel: z.enum(["ALERTA", "AVISO"]).optional(), bomba: z.enum(["A", "B"]).optional() }),
+    }
+  ),
+  tool(
+    async ({ sensor }) => {
+      const buscado = normalizar(sensor);
+      const vistos = new Set<string>();
+      const hallados = Object.values(CONOCIMIENTO_SENSORES).filter((k) => {
+        if (vistos.has(k.nombre)) return false;
+        vistos.add(k.nombre);
+        const n = normalizar(k.nombre);
+        return n.includes(buscado) || buscado.split(/\s+/).every((w) => w.length < 3 || n.includes(w));
+      });
+      return hallados.length ? JSON.stringify(hallados.slice(0, 2)) : `Sin conocimiento registrado para "${sensor}".`;
+    },
+    {
+      name: "conocimiento_sensor",
+      description:
+        "Conocimiento de dominio de un sensor: qué mide, por qué importa, causas típicas de desvío y acción recomendada por nivel (AVISO/ALERTA/CRÍTICA). Úsalo para explicar causas y recomendar acciones.",
+      schema: z.object({ sensor: z.string().describe("Nombre del sensor, p. ej. 'vibración axial'") }),
     }
   ),
   tool(async () => JSON.stringify(estado.eficiencia), {

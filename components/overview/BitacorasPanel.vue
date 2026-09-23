@@ -199,6 +199,7 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount, nextTick } from "vue";
 import { useBitacoras } from "@/composables/useBitacoras";
+import { useOrdenUI } from "@/composables/useControlUI";
 
 const props = defineProps({
   isDarkMode: {
@@ -297,4 +298,17 @@ const formatearFecha = fechaStr => {
     return fechaStr;
   }
 };
+// Control por voz (agente): filtro y página del panel de bitácoras.
+const FILTRO_BITACORA = { todos: 'TODOS', alerta: 'ALERTA', aviso: 'AVISO' };
+useOrdenUI('panel_bitacoras', async ({ nivel, pagina }) => {
+  if (nivel && FILTRO_BITACORA[nivel]) filtroActual.value = FILTRO_BITACORA[nivel];
+  await nextTick();
+  if (pagina === 'siguiente') paginaActual.value = Math.min(paginaActual.value + 1, Math.max(1, totalPaginas.value));
+  else if (pagina === 'anterior') paginaActual.value = Math.max(1, paginaActual.value - 1);
+  else if (typeof pagina === 'number') paginaActual.value = Math.min(Math.max(1, pagina), Math.max(1, totalPaginas.value));
+  await nextTick();
+  const visibles = bitacorasPaginadas.value.map((b) => `${b.alerta_aviso} ${formatearFecha(b.tiempo_ejecucion)}`).join('; ');
+  return `Panel de bitácoras: ${filtroActual.value === 'TODOS' ? 'todas' : filtroActual.value.toLowerCase() + 's'}, ` +
+    `página ${paginaActual.value} de ${Math.max(1, totalPaginas.value)} (${bitacorasFiltradas.value.length} en total). En pantalla: ${visibles || 'ninguna'}.`;
+});
 </script>

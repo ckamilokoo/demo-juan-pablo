@@ -4,7 +4,7 @@
 //   1. Estado operativo   2. Resumen ejecutivo (LLM)   3. Alertas por nivel
 //   4. Sensores con lecturas anómalas (actual/mín/máx)   5. Bitácoras del periodo
 import { ref, type Ref } from "vue";
-import { escenario, alertasVisibles, ACCIONES, type NivelAlerta } from "~/mock/escenario";
+import { escenario, alertasVisibles, accionRecomendada, type NivelAlerta } from "~/mock/escenario";
 import { leerSenal, ultimaEficiencia, bitacorasActuales } from "~/mock/simulador";
 import { perfilDe } from "~/mock/perfiles";
 import { buscarConfigSensor } from "~/config/sensoresAnomaliasConfig";
@@ -102,7 +102,7 @@ export const construirReporte = (horas = 8): ReporteTurno => {
       sensor: buscarConfigSensor(a.tipo_sensor).label,
       hora: horaCorta(a.timestamp),
       deteccion_n: escenario.anomalias.find((x) => x.id === a.id)?.ocurrencia ?? 1,
-      accion: ACCIONES[a.nivel as NivelAlerta],
+      accion: accionRecomendada(a.tipo_sensor, a.nivel as NivelAlerta),
     }))
     .sort((x, y) => orden[x.nivel] - orden[y.nivel]);
 
