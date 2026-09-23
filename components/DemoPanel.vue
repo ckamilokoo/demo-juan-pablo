@@ -27,6 +27,7 @@
             <label class="text-xs text-slate-400">
               Nivel
               <select v-model="nivel" class="mt-1 w-full rounded-md border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm text-white">
+                <option value="">Auto (contador)</option>
                 <option value="CRÍTICA">Crítica</option>
                 <option value="ALERTA">Alerta</option>
                 <option value="AVISO">Aviso</option>
@@ -87,11 +88,13 @@ import { useEventoDemo } from '@/composables/useEventoDemo';
 
 const ESTADOS = ['A', 'B', 'A/B', 'O'];
 
+const emit = defineEmits(['reiniciar']);
 const queryClient = useQueryClient();
 const evento = useEventoDemo();
 const abierto = ref(false);
 const bomba = ref('A');
-const nivel = ref('CRÍTICA');
+// '' = el nivel sale del contador de anomalías del sensor.
+const nivel = ref('');
 const sensor = ref('corriente');
 const estado = ref(escenario.bombaActiva);
 // La transmisión cambia la bomba en operación: resincronizar al abrir.
@@ -115,9 +118,9 @@ watch(bomba, () => {
 const refrescar = () => queryClient.invalidateQueries();
 
 const disparar = () => {
-  const a = evento.anomaliaManual(bomba.value, sensor.value, nivel.value);
+  const a = evento.anomaliaManual(bomba.value, sensor.value, nivel.value || undefined);
   const titulo = sensores.value.find((s) => s.endpoint === sensor.value)?.titulo || sensor.value;
-  ultimo.value = `Anomalía #${a.id} en ${titulo} (Bomba ${a.bomba}). La alerta aparece en ~9 s.`;
+  ultimo.value = `${a.nivel} #${a.ocurrencia} en ${titulo} (Bomba ${a.bomba}). La alerta aparece en ~9 s.`;
   refrescar();
   // Segundo refresco cuando el modelo "la detecta" y se crea la alerta.
   setTimeout(refrescar, a.deteccion - Date.now() + 100);
@@ -129,11 +132,11 @@ const setBomba = (e) => {
   refrescar();
 };
 
+// El reinicio completo (queries, gráficos, notificaciones) lo hace index.vue.
 const reiniciar = () => {
-  evento.reiniciar();
+  emit('reiniciar');
   estado.value = escenario.bombaActiva;
   ultimo.value = 'Escenario reiniciado: la app vuelve a quedar sin datos.';
-  refrescar();
 };
 
 const onKey = (e) => {

@@ -1,37 +1,5 @@
 <template>
   <div :class="[isDarkMode ? 'dark' : 'light', 'h-screen']">
-    <button
-      @click="toggleTheme"
-      class="fixed top-4 right-4 z-20 p-2 rounded-full transition-colors"
-      :class="
-        isDarkMode ? 'bg-white text-[#333333]' : 'bg-[#333333] text-white'
-      "
-    >
-      <svg
-        v-if="isDarkMode"
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-5 w-5"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-      >
-        <path
-          fill-rule="evenodd"
-          d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
-          clip-rule="evenodd"
-        />
-      </svg>
-      <svg
-        v-else
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-5 w-5"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-      >
-        <path
-          d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
-        />
-      </svg>
-    </button>
 
     <div
       class="flex h-screen"
@@ -64,7 +32,7 @@
       >
         <!-- Header -->
         <header
-          class="shadow-sm px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-10"
+          class="shadow-sm px-3 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sticky top-0 z-10"
           :class="
             isDarkMode ? 'bg-white' : 'bg-white border-b border-[#E9ECEF]'
           "
@@ -93,26 +61,55 @@
           </button>
 
           <h2
-            class="text-lg font-medium truncate"
+            class="hidden sm:block min-w-0 text-lg font-medium truncate"
             :class="isDarkMode ? 'text-[#333333]' : 'text-[#2E4053]'"
           >
             {{ currentView.name }}
           </h2>
 
-          <div class="flex items-center gap-3 ml-auto mr-4">
-            <SimularEventoBoton @simular="simularEvento" />
-            <UltimaCargaBadge :is-dark-mode="isDarkMode" />
-            <BombaActivaBadge :is-dark-mode="isDarkMode" />
+          <!-- Indicadores: se ocultan por ancho (el de última carga solo en pantallas grandes) -->
+          <div class="flex min-w-0 items-center gap-2 sm:gap-3 ml-auto">
+            <SimularEventoBoton @simular="simularEvento" @reiniciar="reiniciarDemo" />
+            <UltimaCargaBadge class="hidden xl:flex" :is-dark-mode="isDarkMode" />
+            <BombaActivaBadge class="hidden md:flex" :is-dark-mode="isDarkMode" />
+            <button
+              @click="toggleTheme"
+              class="shrink-0 p-2 rounded-full transition-colors"
+              :class="isDarkMode ? 'bg-white text-[#333333] ring-1 ring-gray-200' : 'bg-[#333333] text-white'"
+              :aria-label="isDarkMode ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
+            >
+              <svg
+        v-if="isDarkMode"
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+          clip-rule="evenodd"
+        />
+      </svg>
+              <svg
+        v-else
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path
+          d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
+        />
+      </svg>
+            </button>
           </div>
-
-          <!-- Spacer for mobile to balance the menu button -->
-          <div v-if="isMobile" class="w-6"></div>
         </header>
 
         <!-- Dashboard Content with KeepAlive -->
-        <main class="p-4 sm:p-6">
-          <EsperandoDatos @iniciar="simularEvento" />
-          <KeepAlive>
+        <main class="p-3 sm:p-6">
+          <!-- :key remonta todas las vistas al reiniciar (gráficos limpios) -->
+          <KeepAlive :key="resetKey">
             <component
               :is="currentComponent"
               :key="activeView"
@@ -128,10 +125,13 @@
     </div>
 
     <!-- Notificaciones de alertas nuevas -->
-    <AlertaToasts @navegar-anomalia="handleNavegarAnomalia" />
+    <AlertaToasts :key="resetKey" @navegar-anomalia="handleNavegarAnomalia" />
+
+    <!-- Agente de voz (OpenAI Realtime + LangGraph) -->
+    <AgenteVoz :is-dark-mode="isDarkMode" />
 
     <!-- Panel oculto para quien presenta (Shift+D) -->
-    <DemoPanel />
+    <DemoPanel @reiniciar="reiniciarDemo" />
   </div>
 </template>
 
@@ -142,9 +142,11 @@ import BombaActivaBadge from '../components/BombaActivaBadge.vue';
 import DemoPanel from '../components/DemoPanel.vue';
 import SimularEventoBoton from '../components/SimularEventoBoton.vue';
 import AlertaToasts from '../components/AlertaToasts.vue';
-import EsperandoDatos from '../components/EsperandoDatos.vue';
+import AgenteVoz from '../components/AgenteVoz.vue';
 import { useQueryClient } from "@tanstack/vue-query";
 import { useEventoDemo } from "../composables/useEventoDemo";
+import { useOrdenUI, estadoUI } from "../composables/useControlUI";
+import { cambiarBombaActiva } from "~/mock/escenario";
 import { useTheme } from "../composables/useTheme";
 import { useResponsive } from "../composables/useResponsive";
 
@@ -181,29 +183,25 @@ const selectNavItem = (id) => {
 };
 
 // Simulación guiada: el primer clic inicia la transmisión de datos; los
-// siguientes disparan eventos nuevos. Se refrescan las queries al instante
+// siguientes disparan episodios nuevos. Se refrescan las queries al instante
 // (y otra vez en cada detección) para no esperar al próximo refetch.
 const queryClient = useQueryClient();
 const evento = useEventoDemo();
+// No cambia de vista: el evento se ve llegar donde esté el usuario.
 const simularEvento = () => {
-  const bomba = evento.simular(() => queryClient.invalidateQueries());
+  evento.simular(() => queryClient.invalidateQueries());
   queryClient.invalidateQueries();
-  irASenales(bomba);
 };
 
-// Simulación de evento: llevar a las señales de la bomba afectada y centrar
-// el gráfico visible (Corriente, activo por defecto) para ver llegar los datos.
-const irASenales = (bomba) => {
-  selectNavItem(bomba === 'B' ? 'sensorsB' : 'sensors');
-  // La vista carga async y el gráfico aparece al llegar los datos: reintentar
-  // hasta ~4 s en vez de un único timeout.
-  let intentos = 0;
-  const centrar = () => {
-    const grafico = document.querySelector('main canvas');
-    if (grafico) grafico.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    else if (++intentos < 20) setTimeout(centrar, 200);
-  };
-  setTimeout(centrar, 300);
+// Reinicio: la demo vuelve a vacío. Se vacía la caché de Vue Query y se
+// remontan las vistas y las notificaciones para no arrastrar gráficos ni
+// alertas de la simulación anterior.
+const resetKey = ref(0);
+const reiniciarDemo = async () => {
+  evento.reiniciar();
+  await queryClient.resetQueries();
+  resetKey.value++;
+  selectNavItem('overview');
 };
 
 // Manejar navegación desde alertas a gráficos de anomalías
@@ -289,5 +287,53 @@ const currentView = computed(() => {
     ...view,
     ...viewConfig
   };
+});
+
+// --- Control por voz (agente) ---
+const VISTAS_AGENTE = {
+  vision_general: 'overview',
+  senales_a: 'sensors',
+  senales_b: 'sensorsB',
+  anomalias_a: 'anomaliasA',
+  anomalias_b: 'anomaliasB',
+};
+
+// Mantener al día lo que el agente "ve" en pantalla.
+watch([activeView, isDarkMode], () => {
+  estadoUI.vista = activeView.value;
+  estadoUI.vistaNombre = currentView.value?.name || activeView.value;
+  estadoUI.temaOscuro = isDarkMode.value;
+}, { immediate: true });
+
+useOrdenUI('navegar', ({ vista }) => {
+  const id = VISTAS_AGENTE[vista];
+  if (!id) return `Vista desconocida: ${vista}.`;
+  selectNavItem(id);
+  return `Mostrando ${findNavItemById(id)?.name}.`;
+});
+
+useOrdenUI('tema', ({ modo }) => {
+  if ((modo === 'oscuro') !== isDarkMode.value) toggleTheme();
+  return `Tema ${isDarkMode.value ? 'oscuro' : 'claro'} activado.`;
+});
+
+useOrdenUI('demo', async ({ accion, bomba }) => {
+  if (accion === 'simular') {
+    const transmitia = evento.transmitiendo.value;
+    simularEvento();
+    return transmitia
+      ? 'Evento simulado: en unos segundos un sensor escalará aviso, alerta y crítica.'
+      : 'Transmisión iniciada: llegan datos en vivo y en unos 10 segundos habrá un evento.';
+  }
+  if (accion === 'reiniciar') {
+    await reiniciarDemo();
+    return 'Demo reiniciada: la planta quedó sin datos.';
+  }
+  if (accion === 'bomba_activa' && ['A', 'B', 'A/B', 'O'].includes(bomba)) {
+    cambiarBombaActiva(bomba);
+    queryClient.invalidateQueries();
+    return `Bomba en operación: ${bomba}.`;
+  }
+  return undefined;
 });
 </script>

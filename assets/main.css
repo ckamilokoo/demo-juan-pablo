@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Foco del agente de voz: resalta unos segundos la sección de la que se habla. */
+.foco-agente {
+  border-radius: 12px;
+  animation: foco-agente 2.4s ease-out 1;
+}
+@keyframes foco-agente {
+  0%, 60% { box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.95), 0 0 24px 4px rgba(249, 115, 22, 0.35); }
+  100% { box-shadow: 0 0 0 3px rgba(249, 115, 22, 0), 0 0 24px 4px rgba(249, 115, 22, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .foco-agente { animation: none; outline: 3px solid rgb(249, 115, 22); outline-offset: 2px; }
+}
+
 /* Tokens shadcn-vue (charts) — scoped a .dark, no toca el resto de la app.
    Neutros calcados de la paleta ya usada en ChatBot/paneles (#1a1a1a, #333333, #E5E7EB).
    chart-1/2 = Bomba A azul / Bomba B purpura (config/bombasConfig.ts) */

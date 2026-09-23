@@ -61,7 +61,7 @@
                 :class="getButtonClass(key, sensor.buttonColor)"
               >
                 <span class="text-sm text-center leading-tight">{{ sensor.label }}</span>
-                <span v-if="sensor.tag" class="text-sm leading-tight">/ {{ sensor.tag }}</span>
+                <span v-if="sensor.tag" class="hidden sm:inline text-sm leading-tight">/ {{ sensor.tag }}</span>
                 <span v-if="visibilidad[key]" class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
               </button>
             </div>
@@ -98,7 +98,7 @@
                 :class="getButtonClass(key, sensor.buttonColor)"
               >
                 <span class="text-sm text-center leading-tight">{{ sensor.label }}</span>
-                <span v-if="sensor.tag" class="text-sm leading-tight">/ {{ sensor.tag }}</span>
+                <span v-if="sensor.tag" class="hidden sm:inline text-sm leading-tight">/ {{ sensor.tag }}</span>
                 <span v-if="visibilidad[key]" class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
               </button>
             </div>
@@ -130,7 +130,7 @@
       <div class="flex gap-6 min-w-max">
         <template v-for="(sensorCfg, key) in allSensoresOrdenados" :key="key">
           <div v-if="visibilidad[key]"
-               class="grafico flex-shrink-0 w-[1030px] rounded-lg shadow p-4 sm:p-6"
+               class="grafico flex-shrink-0 w-[calc(100vw-3.5rem)] md:w-[640px] xl:w-[1030px] rounded-lg shadow p-4 sm:p-6"
                :class="props.isDarkMode ? 'bg-gray-800' : 'bg-white'">
             <h2 class="text-lg font-semibold text-center mb-1" :class="props.isDarkMode ? 'text-gray-200' : 'text-gray-800'">
               {{ sensorCfg.titulo }} ({{ sensorCfg.unidad }})<template v-if="sensorCfg.tag"> / {{ sensorCfg.tag }}</template>
@@ -178,6 +178,8 @@ import { Chart, registerables } from "chart.js";
 import { useSensores, useSensoresB } from "@/composables/useSensores";
 import { getBombaConfig, getAllSensores as getAllSensoresCfg } from "@/config/sensoresConfig";
 import { colorClasificacionHex } from "@/utils/chartUtils";
+import { useOrdenUI } from "@/composables/useControlUI";
+import { resaltar } from "~/agente/enfocar";
 
 Chart.register(...registerables);
 
@@ -490,5 +492,27 @@ onUnmounted(() => {
       charts[key] = null;
     }
   });
+});
+// Control por voz (agente): mostrar/ocultar gráficos de señales de esta bomba.
+// `mostrar`/`ocultar`: claves localName; `ocultar: 'todas'` oculta el resto.
+useOrdenUI('senales', ({ bomba, mostrar = [], ocultar = [] }) => {
+  if (bomba !== props.bomba) return undefined;
+  const claves = Object.keys(allSensores);
+  const aOcultar = ocultar === 'todas' ? claves : ocultar;
+  aOcultar.forEach((k) => {
+    if (visibilidad[k] && !mostrar.includes(k)) visibilidad[k] = false;
+  });
+  mostrar.forEach((k) => {
+    if (k in visibilidad && !visibilidad[k]) toggleSensor(k);
+  });
+  if (mostrar[0]) {
+    // Llevar a la vista el primer gráfico pedido cuando ya esté dibujado.
+    setTimeout(() => {
+      const tarjeta = canvasRefs[mostrar[0]]?.closest('.rounded-lg, .rounded-xl') || canvasRefs[mostrar[0]];
+      if (tarjeta) resaltar(tarjeta, 'center');
+    }, 500);
+  }
+  const visibles = claves.filter((k) => visibilidad[k]).map((k) => allSensores[k]?.titulo || k);
+  return `Señales Bomba ${props.bomba}: gráficos visibles: ${visibles.join(', ') || 'ninguno'}.`;
 });
 </script>

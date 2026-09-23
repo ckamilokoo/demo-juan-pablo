@@ -157,7 +157,10 @@ const gridDias = (dias: number, maxPuntos: number) => {
   const inicio = inicioDatos();
   if (inicio === null) return [];
   const ahora = Date.now();
-  const desde = Math.max(ahora - dias * DIA, inicio);
+  // Eficiencia y potencia son registros agregados de planta: al conectarse
+  // se descarga también el histórico reciente, para que los gráficos tengan
+  // líneas completas que dibujar (las señales de sensores parten de cero).
+  const desde = Math.max(ahora - dias * DIA, inicio - HISTORICO_EFICIENCIA_MS);
   const paso = Math.max(PASO_VIVO_S * 1000, Math.ceil((ahora - desde) / maxPuntos / 1000) * 1000);
   const tiempos: number[] = [];
   for (let t = Math.ceil(desde / paso) * paso; t <= ahora; t += paso) tiempos.push(t);
@@ -166,6 +169,8 @@ const gridDias = (dias: number, maxPuntos: number) => {
   if (tiempos[tiempos.length - 1] !== vivo) tiempos.push(vivo);
   return tiempos;
 };
+
+const HISTORICO_EFICIENCIA_MS = 6 * 60 * MIN;
 
 const onda = (t: number, periodoS: number, fase: number) =>
   Math.sin((2 * Math.PI * (t / 1000)) / periodoS + fase);
@@ -179,7 +184,8 @@ const eficiencia = (bomba: Bomba, dias: number, maxPuntos: number) => {
       id: i + 1,
       clasificacion: 1,
       tiempo_sensor: horaTexto(t),
-      valor_sensor: redondear(74 + 5 * carga + 1.1 * onda(t, 5400, semilla) + 0.4 * ruido(semilla, s), 2),
+      // B algo más baja que A para que ambas líneas se distingan en "Sistema".
+      valor_sensor: redondear((bomba === 'B' ? 69 : 76) + 5 * carga + 1.1 * onda(t, 5400, semilla) + 0.4 * ruido(semilla, s), 2),
       potencia_kw: redondear(2600 + 700 * carga + 30 * ruido(semilla + 2, s), 1),
       presion_bar: redondear(158 + 9 * carga + 0.6 * ruido(semilla + 3, s), 2),
       flujo_kg_h: Math.round(150000 + 45000 * carga + 1500 * ruido(semilla + 4, s)),
@@ -330,4 +336,19 @@ export const responder = (url: string): RespuestaSimulada => {
   }
 
   return noEncontrado(ruta);
+};
+
+// --- Resumen para el agente de voz ---
+
+/** Bitácoras de ambas bombas (vacías antes de iniciar la transmisión). */
+export const bitacorasActuales = () => [...bitacoras('A', false).map((b) => ({ ...b, bomba: 'A' as const })), ...bitacoras('B', false).map((b) => ({ ...b, bomba: 'B' as const }))];
+
+/** Última lectura de eficiencia por bomba y potencia del sistema (o null sin datos). */
+export const ultimaEficiencia = () => {
+  const ultimo = <T>(filas: T[]) => (filas.length ? filas[filas.length - 1] : null);
+  return {
+    A: ultimo(eficiencia('A', 1, 50)),
+    B: ultimo(eficiencia('B', 1, 50)),
+    potencia: ultimo(potencias(1, 50)),
+  };
 };

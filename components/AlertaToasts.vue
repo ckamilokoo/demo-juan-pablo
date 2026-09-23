@@ -1,6 +1,9 @@
 <template>
   <Teleport to="body">
-    <div class="pointer-events-none fixed right-4 top-20 z-50 flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-3">
+    <div
+      class="pointer-events-none fixed z-50 flex flex-col gap-3 inset-x-3 bottom-24 sm:inset-x-auto sm:bottom-auto sm:top-20 sm:w-96"
+      :class="panelVozVisible ? 'sm:right-[396px]' : 'sm:right-4'"
+    >
       <TransitionGroup name="toast">
         <div
           v-for="t in toasts"
@@ -45,9 +48,16 @@
 // Notificaciones emergentes cuando aparece una alerta nueva (simulación
 // guiada o panel oculto). Compara contra las alertas ya conocidas: las que
 // existían al cargar no se notifican.
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { useAlertas } from "@/composables/useAlertas";
 import { buscarConfigSensor } from "@/config/sensoresAnomaliasConfig";
+import { useAgenteVoz } from "@/composables/useAgenteVoz";
+
+// Con el panel de Atlas abierto, las notificaciones se corren a su izquierda
+// para no taparlo. En celular van abajo y se muestra una a la vez.
+const { panelAbierto, estado: estadoVoz } = useAgenteVoz();
+const panelVozVisible = computed(() => panelAbierto.value && estadoVoz.value !== "inactivo");
+const maxToasts = () => (window.innerWidth < 640 ? 1 : 3);
 
 const emit = defineEmits(["navegar-anomalia"]);
 
@@ -101,7 +111,7 @@ watch(
           detalle: (a.descripcion || "").replace(/\s*Acci[oó]n recomendada[\s\S]*$/i, ""),
         },
         ...toasts.value,
-      ].slice(0, 3);
+      ].slice(0, maxToasts());
       setTimeout(() => cerrar(a.id), DURACION_MS);
     }
   },

@@ -53,7 +53,10 @@ export function useResponsive() {
     // Check initial screen size
     checkIfMobile();
 
-    isSidebarCollapsed.value = localStorage.getItem(STORAGE_COLAPSADO) === '1';
+    // Sin preferencia guardada, en tablet (< 1280 px) el menú parte colapsado
+    // (solo íconos) para dejarle el ancho al contenido.
+    const guardado = localStorage.getItem(STORAGE_COLAPSADO);
+    isSidebarCollapsed.value = guardado === null ? window.innerWidth < 1280 : guardado === '1';
 
     // Add resize listener
     window.addEventListener("resize", throttledCheckIfMobile);

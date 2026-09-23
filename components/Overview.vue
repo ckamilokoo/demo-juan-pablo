@@ -1,13 +1,15 @@
 <template>
   <!--
-    Layout: columna izquierda fija (Alertas arriba, Bitácoras abajo, separadas
-    por gap-6) | Gráficos de eficiencia ocupando el ancho restante.
-    overflow-x-auto + min-w en gráficos mantiene el scroll horizontal en
-    pantallas angostas en vez de aplastar los charts.
+    Layout responsivo:
+    - xl (≥1280): columna izquierda de 420px (Alertas / Bitácoras) | gráficos de eficiencia.
+    - md–lg: Alertas y Bitácoras lado a lado, gráficos debajo a todo el ancho.
+    - celular: todo en una columna.
+    Antes era siempre 420px + min 560px con scroll horizontal: en celular los
+    gráficos quedaban fuera de la pantalla.
   -->
-  <div class="flex gap-6 mb-6 min-h-[600px] overflow-x-auto">
-    <div class="flex-shrink-0 w-[420px] flex flex-col gap-6">
-      <div class="flex-1 min-h-0">
+  <div class="flex flex-col xl:flex-row gap-6 mb-6 xl:min-h-[600px]">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:flex xl:flex-col xl:w-[420px] xl:flex-shrink-0 gap-6">
+      <div class="flex-1 min-h-[380px] xl:min-h-0" data-foco="alertas">
         <AlertasPanel
           :is-dark-mode="isDarkMode"
           @navegar-anomalia="handleNavegarAnomalia"
@@ -15,12 +17,12 @@
         />
       </div>
 
-      <div class="flex-1 min-h-0">
+      <div class="flex-1 min-h-[380px] xl:min-h-0" data-foco="bitacoras">
         <BitacorasPanel :is-dark-mode="isDarkMode" />
       </div>
     </div>
 
-    <div class="flex-1 min-w-[560px]">
+    <div class="flex-1 min-w-0">
       <GraficosEficiencia :is-dark-mode="isDarkMode" />
     </div>
   </div>

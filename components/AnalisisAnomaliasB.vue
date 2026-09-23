@@ -1,13 +1,13 @@
 <template>
-  <div class="p-6 space-y-6">
+  <div class="p-0 sm:p-2 lg:p-6 space-y-6">
     <!-- Header -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-      <div class="flex items-center justify-between mb-4">
+    <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
         <div>
-          <h1 class="text-2xl font-bold text-gray-800">Análisis de Anomalías - Bomba B</h1>
+          <h1 class="text-xl sm:text-2xl font-bold text-gray-800">Análisis de Anomalías - Bomba B</h1>
           <p class="text-gray-600 mt-1">Visualización de periodos anómalos detectados en sensores</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
           <!-- Selector de período -->
           <select
             v-model.number="diasSeleccionado"
@@ -39,7 +39,7 @@
            pasaba desapercibido. -->
       <div class="flex flex-wrap items-center gap-x-5 gap-y-3 mb-5 pb-5 border-b border-gray-200">
         <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Modo de vista</span>
-        <div class="flex bg-gray-100 rounded-xl p-1.5" role="tablist" aria-label="Modo de vista">
+        <div class="flex max-w-full overflow-x-auto bg-gray-100 rounded-xl p-1.5" role="tablist" aria-label="Modo de vista">
           <button
             v-for="modo in MODOS_VISTA"
             :key="modo.valor"
@@ -86,7 +86,7 @@
       </div>
 
       <!-- Selector de Sensores -->
-      <div v-else>
+      <div v-else data-foco="anomalias_sensores">
         <p class="text-sm text-gray-600 mb-3">
           <span class="font-medium">{{ sensoresConAnomalias.length }}</span>
           {{ sensoresConAnomalias.length === 1 ? 'sensor con anomalías detectadas' : 'sensores con anomalías detectadas' }}
@@ -249,7 +249,7 @@
     </div>
 
     <!-- Gráficos activos -->
-    <div v-if="hayGraficoParaMostrar">
+    <div v-if="hayGraficoParaMostrar" data-foco="anomalias_graficos">
       <!-- Vista Individual: Layout horizontal con scroll -->
       <div v-if="modoVista === 'individual'" class="overflow-x-auto overflow-y-hidden mb-6 p-4">
         <div class="flex gap-6 min-w-max">
@@ -346,6 +346,7 @@ import {
 import { useBombaActiva } from '@/composables/useBombaActiva';
 import { esSensorGeneral, normalizarSensor, getAllSensores } from '@/config/bombasConfig';
 import { buscarConfigSensor, buscarTagSensor } from '@/config/sensoresAnomaliasConfig';
+import { useOrdenUI } from '@/composables/useControlUI';
 
 const queryClient = useQueryClient();
 const MINUTOS_CONTEXTO = 30;
@@ -473,7 +474,9 @@ const descripcionModoVista = computed(
 );
 
 // Sub-modo del gráfico "conjunto": false = valores reales (default), true = normalizado 0-100%
-const conjuntoNormalizado = ref(false);
+// Demo: normalizado por defecto para que las curvas del episodio se superpongan
+// aunque tengan unidades distintas (A, °C, ms).
+const conjuntoNormalizado = ref(true);
 
 // --- Estado exclusivo del modo Conjunto ---
 // Sensor principal: define el episodio (alerta) que fija la ventana temporal común.
@@ -737,4 +740,44 @@ watch(
   },
   { immediate: true }
 );
+// Demo: al elegir un episodio en Conjunto se precargan como "a comparar" los
+// sensores con anomalías en la misma ventana (±15 min), así el gráfico muestra
+// de entrada las señales del episodio alineadas en el tiempo.
+const VENTANA_SIMULTANEA_MS = 15 * 60 * 1000;
+watch(episodioSeleccionado, (id) => {
+  if (!id) return;
+  const alertasBomba = alertasPorBomba.value.B || [];
+  const episodio = alertasBomba.find((a) => a.id === id);
+  if (!episodio) return;
+  const t = new Date(episodio.timestamp).getTime();
+  const principal = normalizarSensor(sensorPrincipalConjunto.value || '');
+  sensoresCompararActivos.value = [...new Set(
+    alertasBomba
+      .filter((a) => Math.abs(new Date(a.timestamp).getTime() - t) <= VENTANA_SIMULTANEA_MS)
+      .map((a) => a.tipo_sensor)
+  )].filter((s) => normalizarSensor(s) !== principal);
+}, { immediate: true });
+// Control por voz (agente): modo de vista y sensores seleccionados.
+// `seleccionar`: 'todos' | 'ninguno' | lista de slugs (endpoint) de sensores.
+useOrdenUI('anomalias', ({ bomba, modo, seleccionar }) => {
+  if (bomba !== 'B') return undefined;
+  // Vista recién montada: esperar a que carguen las alertas (el emisor reintenta).
+  if (isLoadingAlertas.value) return undefined;
+  if (modo) modoVista.value = modo;
+  if (seleccionar === 'todos') seleccionarTodos();
+  else if (seleccionar === 'ninguno') deseleccionarTodos();
+  else if (Array.isArray(seleccionar)) {
+    const buscados = seleccionar.map((s) => normalizarSensor(s));
+    const encontrados = sensoresConAnomalias.value.filter((k) => buscados.includes(normalizarSensor(k)));
+    sensoresActivos.value = encontrados.slice(0, MAX_SENSORES);
+    if (modoVista.value === 'conjunto' && encontrados[0]) sensorPrincipalConjunto.value = encontrados[0];
+  } else if (modoVista.value !== 'conjunto' && sensoresActivos.value.length === 0) {
+    seleccionarTodos();
+  }
+  const nombres = (lista) => lista.map((k) => buscarConfigSensor(k).label).join(', ') || 'ninguno';
+  return `Anomalías Bomba B: modo ${modoVista.value}. Sensores con anomalías: ${nombres(sensoresConAnomalias.value)}. ` +
+    (modoVista.value === 'conjunto'
+      ? `Principal en conjunto: ${sensorPrincipalConjunto.value ? buscarConfigSensor(sensorPrincipalConjunto.value).label : 'ninguno'}.`
+      : `Seleccionados: ${nombres(sensoresActivos.value)}.`);
+});
 </script>

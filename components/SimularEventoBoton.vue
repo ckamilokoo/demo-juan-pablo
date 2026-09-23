@@ -1,11 +1,11 @@
 <template>
-  <div class="flex items-center gap-2">
+  <div class="flex min-w-0 items-center gap-2">
     <!-- Indicador de fase mientras corre la simulación -->
     <Transition name="fase" mode="out-in">
       <div
         v-if="fase !== 'inactivo'"
         :key="fase"
-        class="hidden md:flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
+        class="hidden lg:flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold"
         :class="estilo.pill"
         role="status"
         aria-live="polite"
@@ -19,7 +19,8 @@
     </Transition>
 
     <button
-      class="flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold text-white shadow transition disabled:cursor-not-allowed disabled:opacity-60"
+      class="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 sm:px-4 py-1.5 text-sm font-semibold text-white shadow transition disabled:cursor-not-allowed disabled:opacity-60"
+      :aria-label="enCurso ? 'Simulando' : transmitiendo ? 'Simular evento' : 'Iniciar transmisión'"
       :class="enCurso ? 'bg-gray-500' : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 hover:shadow-md'"
       :disabled="enCurso"
       title="Simula la llegada de datos de planta con una anomalía y su detección"
@@ -28,7 +29,22 @@
       <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11-6.86a1 1 0 0 0 0-1.72l-11-6.86A1 1 0 0 0 8 5.14z" />
       </svg>
-      {{ enCurso ? 'Simulando…' : transmitiendo ? 'Simular evento' : 'Iniciar transmisión' }}
+      <span class="hidden sm:inline">{{ enCurso ? 'Simulando…' : transmitiendo ? 'Simular evento' : 'Iniciar transmisión' }}</span>
+    </button>
+
+    <!-- Reinicio: vuelve la demo a vacío para repetir la simulación -->
+    <button
+      v-if="transmitiendo"
+      class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-300 bg-white px-2.5 sm:px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 hover:text-gray-800"
+      aria-label="Reiniciar demo"
+      title="Borra los datos simulados y deja la demo como al inicio"
+      @click="emit('reiniciar')"
+    >
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+        <path d="M3 3v5h5" />
+      </svg>
+      <span class="hidden sm:inline">Reiniciar</span>
     </button>
   </div>
 </template>
@@ -39,7 +55,7 @@
 import { computed } from "vue";
 import { useEventoDemo } from "@/composables/useEventoDemo";
 
-const emit = defineEmits(["simular"]);
+const emit = defineEmits(["simular", "reiniciar"]);
 
 const { fase, transmitiendo } = useEventoDemo();
 

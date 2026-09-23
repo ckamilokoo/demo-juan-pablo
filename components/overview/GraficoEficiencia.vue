@@ -56,6 +56,37 @@ const el = ref(null);
 let chart = null;
 
 const tieneDatos = computed(() => Array.isArray(props.datos) && props.datos.length > 0);
+
+// --- Revelado progresivo (demo) ---
+// Cuando llegan los primeros datos: spinner de carga y luego las series van
+// apareciendo de a una, cada una dibujándose de izquierda a derecha.
+const REVELAR_CARGA_MS = 1500;
+const REVELAR_PASO_MS = 700;
+const cargandoRevelado = ref(false);
+const seriesVisibles = ref(Infinity);
+let timersRevelado = [];
+const limpiarRevelado = () => {
+  timersRevelado.forEach(clearTimeout);
+  timersRevelado = [];
+};
+const totalSeries = () => props.niveles.length + (props.pcts?.length || 1);
+const iniciarRevelado = () => {
+  limpiarRevelado();
+  cargandoRevelado.value = true;
+  seriesVisibles.value = 0;
+  timersRevelado.push(setTimeout(() => (cargandoRevelado.value = false), REVELAR_CARGA_MS));
+  for (let k = 1; k <= totalSeries(); k++) {
+    timersRevelado.push(
+      setTimeout(() => (seriesVisibles.value = k), REVELAR_CARGA_MS + (k - 1) * REVELAR_PASO_MS)
+    );
+  }
+  timersRevelado.push(
+    setTimeout(() => (seriesVisibles.value = Infinity), REVELAR_CARGA_MS + totalSeries() * REVELAR_PASO_MS)
+  );
+};
+const revelando = computed(() => cargandoRevelado.value || seriesVisibles.value !== Infinity);
+// Serie i (niveles primero, luego pcts) todavía oculta: se dibuja vacía.
+const datosSerie = (i, data) => (i < seriesVisibles.value ? data : []);
 // stacked: 1 panel de % + 1 panel por nivel, ~140px cada uno (4 paneles = 560px, igual que antes)
 const alturaPx = computed(() =>
   props.layout === "stacked" ? 140 * (1 + props.niveles.length) : 340
@@ -160,7 +191,7 @@ const nivelSeries = () =>
   props.niveles.map((n, i) => ({
     name: n.nombre,
     type: "line",
-    data: nivelesData.value[i],
+    data: datosSerie(i, nivelesData.value[i]),
     showSymbol: false,
     smooth: false,
     sampling: "lttb",
@@ -174,7 +205,7 @@ const pctSeriesList = () =>
   pctsResueltas.value.map((p, i) => ({
     name: p.nombre,
     type: "line",
-    data: pctsData.value[i],
+    data: datosSerie(props.niveles.length + i, pctsData.value[i]),
     showSymbol: false,
     sampling: "lttb",
     lineStyle: { width: 2, type: "dashed", color: p.color },
@@ -215,6 +246,11 @@ const dataZoomBase = (extra = {}) => [
   },
 ];
 
+const animacion = () =>
+  revelando.value
+    ? { animationDuration: 1100, animationEasing: "cubicOut", animationDurationUpdate: 1100 }
+    : { animationDuration: 250, animationDurationUpdate: 300 };
+
 const buildOption = () => {
   const t = tema.value;
 
@@ -245,7 +281,7 @@ const buildOption = () => {
     const colorEjePct = pctsResueltas.value[0].color;
 
     return {
-      animationDuration: 250,
+      ...animacion(),
       tooltip: tooltip(),
       grid: { left: gridLeft, right: gridRight, top: 28, bottom: 50 },
       dataZoom: dataZoomBase(),
@@ -287,7 +323,7 @@ const buildOption = () => {
   const idx = paneles.map((_, i) => i);
 
   return {
-    animationDuration: 250,
+    ...animacion(),
     tooltip: tooltip(),
     axisPointer: { link: [{ xAxisIndex: "all" }] },
     grid: paneles.map((_, i) => ({
@@ -343,13 +379,37 @@ const render = async () => {
     return;
   }
   if (!el.value) return;
+  let nuevo = false;
   if (!chart || chart.getDom() !== el.value) {
     if (chart) chart.dispose();
     chart = echarts.init(el.value, null, { renderer: "canvas" });
+    nuevo = true;
   }
-  chart.setOption(buildOption(), true);
+  // Reemplazo completo solo si cambia la estructura (layout, tema, series);
+  // los refrescos de datos se fusionan para que las líneas visibles no se
+  // vuelvan a dibujar desde cero cada vez.
+  const estructura = JSON.stringify([
+    props.layout, props.isDarkMode, props.fixPct, props.acento,
+    props.niveles.map((n) => n.key), (props.pcts || []).map((p) => p.key),
+  ]);
+  const reemplazar = nuevo || estructura !== ultimaEstructura;
+  ultimaEstructura = estructura;
+  chart.setOption(buildOption(), reemplazar);
+  if (cargandoRevelado.value) {
+    const t = tema.value;
+    chart.showLoading("default", {
+      text: "Cargando datos…",
+      color: "#f2a93b",
+      textColor: t.inkDim,
+      maskColor: props.isDarkMode ? "rgba(17,24,39,0.55)" : "rgba(255,255,255,0.7)",
+      fontSize: 12,
+    });
+  } else {
+    chart.hideLoading();
+  }
   chart.resize();
 };
+let ultimaEstructura = "";
 
 const handleResize = () => chart && chart.resize();
 
@@ -368,6 +428,21 @@ onActivated(() => {
   });
 });
 
+// Primer lote de datos (o tras reiniciar la demo): revelar progresivamente.
+watch(
+  tieneDatos,
+  (hay, habia) => {
+    if (hay && !habia) iniciarRevelado();
+    else if (!hay) {
+      limpiarRevelado();
+      cargandoRevelado.value = false;
+      seriesVisibles.value = Infinity;
+    }
+  },
+  { immediate: true }
+);
+watch([cargandoRevelado, seriesVisibles], () => render());
+
 watch(
   () => [
     props.datos,
@@ -383,6 +458,7 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  limpiarRevelado();
   if (!import.meta.client) return;
   window.removeEventListener("resize", handleResize);
   if (chart) {

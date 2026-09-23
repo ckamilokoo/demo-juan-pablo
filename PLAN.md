@@ -109,7 +109,11 @@ En el proyecto origen **todo el acceso a datos pasa por `utils/authFetch.ts`**. 
 ## Avance
 
 - [x] **Fase 1 — Base**: archivos ✅ copiados, `package.json` limpio (solo deps usadas), `nuxt.config.ts` sin proxy ni Entra ID, `npm install` OK (0 vulnerabilidades). Imports pendientes: `utils/authFetch` (fase 2) y `composables/useTracking` (fase 3).
-- [ ] Fase 2 — Simulador
-- [ ] Fase 3 — Login + shell
-- [ ] Fase 4 — Tiempo real
-- [ ] Fase 5 — Anomalías A/B
+- [x] **Fase 2 — Simulador**: `utils/authFetch.ts` responde desde `mock/simulador.ts` (señales deterministas por timestamp, eficiencia, potencias, alertas, contexto de anomalías, bitácoras).
+- [x] **Fase 3 — Login + shell**: login 3D con formulario demo y marca genérica, sesión en `localStorage`, sidebar sin feedback/API docs, links de Power BI del cliente eliminados.
+- [x] **Fase 4 — Tiempo real**: refetch cada 3 s (eficiencia 6 s), gráficos actualizan in-place.
+- [x] **Fase 5 — Anomalías A/B**: vistas copiadas, correlación de sensores funcionando.
+- [x] **Extra (2026-09-23)**: la app arranca vacía; botón visible *Iniciar transmisión / Simular evento* con indicador de fases y notificaciones de alerta; panel oculto `Shift+D` para control manual y reinicio.
+
+### Notas técnicas
+- `utils/toleranciaDataset.js`: comentario movido fuera de la línea del `export const` porque el escáner de auto-imports de Nuxt generaba un export fantasma `y` (mismo bug latente en el repo original).

@@ -46,7 +46,7 @@
       </button>
     </div>
 
-    <template v-for="tarjeta in tarjetas" :key="tarjeta.id">
+    <div v-for="tarjeta in tarjetas" :key="tarjeta.id" :data-foco="`eficiencia_${tarjeta.id.toLowerCase()}`">
       <!-- Cargando -->
       <div
         v-if="tarjeta.cargando"
@@ -122,7 +122,7 @@
           :texto-sin-datos="tarjeta.textoSinDatosGrafico"
         />
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
@@ -132,6 +132,7 @@ import GraficoEficiencia from "@/components/overview/GraficoEficiencia.vue";
 import { useEficienciaBombaA, useEficienciaBombaB } from "@/composables/useEficiencia";
 import { EFICIENCIA_DIAS_DEFAULT } from "@/composables/factories/createUseEficiencia";
 import { usePotencias } from "@/composables/usePotencias";
+import { useOrdenUI } from "@/composables/useControlUI";
 import { tiempoMs, alinearPorTiempo, toleranciaAdaptativaMs } from "@/utils/alinearSeries";
 
 const props = defineProps({
@@ -147,7 +148,9 @@ const LAYOUTS = [
   { valor: "stacked", texto: "Paneles apilados" },
 ];
 
-const layout = ref("dual");
+// En pantallas angostas los 4 ejes Y del modo "dual" dejan el gráfico sin
+// espacio: ahí se parte con paneles apilados.
+const layout = ref(import.meta.client && window.innerWidth < 768 ? "stacked" : "dual");
 const fixPct = ref(true);
 
 // Ventana de datos a pedir: ultimos N dias (inicio/termino ISO)
@@ -288,4 +291,10 @@ const refrescarDatos = () => {
   refetchA();
   refetchB();
 };
+// Control por voz (agente): disposición de los gráficos de eficiencia.
+useOrdenUI("eficiencia", ({ disposicion }) => {
+  if (disposicion === "apilados") layout.value = "stacked";
+  else if (disposicion === "ejes") layout.value = "dual";
+  return `Gráficos de eficiencia en modo ${layout.value === "stacked" ? "paneles apilados" : "ejes por unidad"}.`;
+});
 </script>

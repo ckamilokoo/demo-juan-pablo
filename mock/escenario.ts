@@ -2,7 +2,7 @@
 // alertas que generan y bomba activa. Estado en memoria del navegador; se reinicia al
 // recargar la página.
 import { buscarConfigSensor } from '~/config/sensoresAnomaliasConfig';
-import { perfilDe } from './perfiles';
+import { perfilDe, normalizarSlug } from './perfiles';
 
 export type Bomba = 'A' | 'B';
 export type NivelAlerta = 'CRÍTICA' | 'ALERTA' | 'AVISO';
@@ -20,6 +20,8 @@ export interface Anomalia {
   intensidad: number;
   // Momento en que el "modelo" la detecta y aparece la alerta.
   deteccion: number;
+  // N.º de anomalía de este sensor (contador propio por bomba + sensor).
+  ocurrencia: number;
 }
 
 const HORA = 60 * 60_000;
@@ -39,17 +41,30 @@ export const iniciarTransmision = () => {
   escenario.bombaActiva = 'A';
 };
 
+// Cada sensor escala según su propio contador de anomalías:
+// 1.ª = AVISO, 2.ª = ALERTA, 3.ª en adelante = CRÍTICA.
+export const nivelPorOcurrencia = (n: number): NivelAlerta =>
+  n <= 1 ? 'AVISO' : n === 2 ? 'ALERTA' : 'CRÍTICA';
+
+const ocurrenciasPrevias = (bomba: Bomba, sensor: string) => {
+  const s = normalizarSlug(sensor);
+  return escenario.anomalias.filter((a) => a.bomba === bomba && normalizarSlug(a.sensor) === s).length;
+};
+
 /**
  * Dispara una anomalía que empieza dentro de `retrasoMs` (0 = ahora).
+ * El nivel sale del contador del sensor salvo que se fuerce con `nivel`.
  * El "modelo" la detecta 9 s después de que empieza el desvío.
  */
 export const dispararAnomalia = (
   bomba: Bomba,
   sensor: string,
-  nivel: NivelAlerta = 'CRÍTICA',
+  nivelForzado?: NivelAlerta,
   { duracionS = 75, retrasoMs = 0 } = {}
 ): Anomalia => {
   const inicio = Date.now() + retrasoMs;
+  const ocurrencia = ocurrenciasPrevias(bomba, sensor) + 1;
+  const nivel = nivelForzado ?? nivelPorOcurrencia(ocurrencia);
   const anomalia: Anomalia = {
     id: siguienteId++,
     bomba,
@@ -59,6 +74,7 @@ export const dispararAnomalia = (
     nivel,
     intensidad: nivel === 'AVISO' ? 0.6 : nivel === 'ALERTA' ? 0.8 : 1,
     deteccion: inicio + 9000,
+    ocurrencia,
   };
   escenario.anomalias.push(anomalia);
   return anomalia;
@@ -91,7 +107,8 @@ const descripcion = (a: Anomalia): string => {
   return (
     `${prefijo} - BOMBA ${a.bomba}: ${cfg.label} ${sentido} el umbral ` +
     `(pico ${pico.toFixed(p.decimales)} ${cfg.unit}, umbral ${p.umbral} ${cfg.unit}). ` +
-    `Patrón anómalo detectado por el modelo. Acción recomendada: ${ACCIONES[a.nivel]}`
+    `Patrón anómalo detectado por el modelo (${a.ocurrencia}.ª detección en este sensor). ` +
+    `Acción recomendada: ${ACCIONES[a.nivel]}`
   );
 };
 

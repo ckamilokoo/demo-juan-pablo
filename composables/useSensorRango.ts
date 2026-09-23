@@ -25,7 +25,9 @@ export const fetchDatosSensorRango = async (
 ) => {
   const { apiUrl } = useRuntimeConfig().public;
 
-  const url = new URL(`${apiUrl}/alertas_umbral/sensor/${bomba}/${tipoSensor}/datos`);
+  // Base explícita: en la demo apiUrl es relativa ("/api") y `new URL` sin
+  // base lanza "Invalid URL" (todos los sensores quedaban "SIN DATOS").
+  const url = new URL(`${apiUrl}/alertas_umbral/sensor/${bomba}/${tipoSensor}/datos`, window.location.origin);
   url.searchParams.append("fecha_inicio", fechaInicio);
   url.searchParams.append("fecha_fin", fechaFin);
   if (maxPuntos) {
