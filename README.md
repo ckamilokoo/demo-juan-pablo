@@ -40,7 +40,7 @@ cp .env.example .env   # y pega tu OPENAI_API_KEY (solo para el agente de voz)
 npm run dev
 ```
 
-Abrir http://localhost:3000 e ingresar con **cualquier usuario y contraseña**.
+Abrir http://localhost:3000 y presionar **Ingresar** (sin credenciales).
 
 Sin `OPENAI_API_KEY` todo funciona salvo el agente de voz. Si la variable existe en el entorno del sistema, tiene prioridad sobre `.env`.
 
@@ -87,6 +87,7 @@ Micrófono ──WebRTC──▶ OpenAI Realtime (gpt-realtime) ──▶ voz de
 - Botón flotante abajo a la derecha (orbe animado según escucha / piensa / habla). El panel muestra la transcripción, las acciones ejecutadas y un campo para escribir si hay ruido en la sala.
 - Frases de ejemplo: "inicia la transmisión", "muéstrame solo la corriente y la vibración axial de la bomba A", "¿qué está fallando?", "abre las anomalías de la bomba A en modo combinado", "pon los gráficos de eficiencia apilados", "cambia a tema claro", "reinicia la demo".
 - **Enfoque automático**: cuando Atlas habla de una sección (alertas, bitácoras, eficiencia, gráficos de anomalías) la lleva a la vista con scroll y la resalta; al abrir gráficos los centra.
+- **Reporte de turno**: "genera el reporte del turno y mándalo a mantenimiento" (o el botón *Reporte* del header). Mismas secciones que el reporte ejecutivo real de Backend-GM: estado operativo, resumen ejecutivo (LLM con las reglas de redacción del backend), alertas por nivel con acción recomendada, sensores con lecturas anómalas (actual/mín/máx/umbral) y bitácoras del periodo. Se abre en pantalla, se puede imprimir/guardar como PDF y enviar por correo con las tablas (con confirmación). "Ver cómo se verá el correo" muestra el HTML real sin enviarlo.
 - **Correos con gráfico**: "mándale a mantenimiento el gráfico de corriente de la bomba A con la falla". Atlas captura el gráfico (canvas, no pantallazo), el analista redacta el cuerpo con los datos reales y aparece un **borrador editable** en el panel. Se envía solo al decir "sí, envíalo" o presionar *Enviar correo* (el envío por voz se bloquea si no hubo un turno del usuario después del borrador). Solo fallas, alertas o gráficos; máx. 5 destinatarios y 15 correos por hora. Requiere `SMTP_*` y opcionalmente `CONTACTOS_CORREO` en `.env`.
 - Variables opcionales en `.env.example`: modelo del analista (`OPENAI_MODEL`), modelo de voz (`OPENAI_REALTIME_MODEL`) y voz (`OPENAI_VOICE`).
 

@@ -3,8 +3,9 @@
 // humana antes de enviar). En globalThis por la misma razón que la sesión de
 // voz: una sola instancia aunque la recarga en caliente duplique módulos.
 import { ref, type Ref } from "vue";
+import type { ReporteTurno } from "./reporteTurno";
 
-export type TipoCorreo = "falla" | "alerta" | "grafico";
+export type TipoCorreo = "falla" | "alerta" | "grafico" | "reporte";
 
 export interface BorradorCorreo {
   para: string[];
@@ -13,6 +14,7 @@ export interface BorradorCorreo {
   tipo: TipoCorreo;
   imagen: string | null; // data:image/png;base64,...
   descripcionGrafico: string | null;
+  reporte?: ReporteTurno | null; // tipo "reporte": tablas del reporte de turno
   creadoEn: number;
 }
 
@@ -50,6 +52,7 @@ export const enviarBorrador = async (): Promise<{ ok: boolean; mensaje: string }
         tipo: b.tipo,
         imagen: b.imagen ?? undefined,
         descripcionGrafico: b.descripcionGrafico ?? undefined,
+        reporte: b.reporte ?? undefined,
       },
     });
     correo.borrador.value = null;

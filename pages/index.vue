@@ -69,7 +69,7 @@
 
           <!-- Indicadores: se ocultan por ancho (el de última carga solo en pantallas grandes) -->
           <div class="flex min-w-0 items-center gap-2 sm:gap-3 ml-auto">
-            <SimularEventoBoton @simular="simularEvento" @reiniciar="reiniciarDemo" />
+            <SimularEventoBoton @simular="simularEvento" @reiniciar="reiniciarDemo" @reporte="generarReporte(8)" />
             <UltimaCargaBadge class="hidden xl:flex" :is-dark-mode="isDarkMode" />
             <BombaActivaBadge class="hidden md:flex" :is-dark-mode="isDarkMode" />
             <button
@@ -127,6 +127,9 @@
     <!-- Notificaciones de alertas nuevas -->
     <AlertaToasts :key="resetKey" @navegar-anomalia="handleNavegarAnomalia" />
 
+    <!-- Reporte de turno (lo abre el agente o el botón del header) -->
+    <ReporteTurno :is-dark-mode="isDarkMode" />
+
     <!-- Agente de voz (OpenAI Realtime + LangGraph) -->
     <AgenteVoz :is-dark-mode="isDarkMode" />
 
@@ -143,6 +146,8 @@ import DemoPanel from '../components/DemoPanel.vue';
 import SimularEventoBoton from '../components/SimularEventoBoton.vue';
 import AlertaToasts from '../components/AlertaToasts.vue';
 import AgenteVoz from '../components/AgenteVoz.vue';
+import ReporteTurno from '../components/ReporteTurno.vue';
+import { generarReporte, reporteAbierto } from "~/agente/reporteTurno";
 import { useQueryClient } from "@tanstack/vue-query";
 import { useEventoDemo } from "../composables/useEventoDemo";
 import { useOrdenUI, estadoUI } from "../composables/useControlUI";
@@ -199,6 +204,7 @@ const simularEvento = () => {
 const resetKey = ref(0);
 const reiniciarDemo = async () => {
   evento.reiniciar();
+  reporteAbierto.value = null;
   await queryClient.resetQueries();
   resetKey.value++;
   selectNavItem('overview');

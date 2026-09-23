@@ -32,6 +32,20 @@
       <span class="hidden sm:inline">{{ enCurso ? 'Simulando…' : transmitiendo ? 'Simular evento' : 'Iniciar transmisión' }}</span>
     </button>
 
+    <!-- Reporte de turno -->
+    <button
+      v-if="transmitiendo"
+      class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-300 bg-white px-2.5 sm:px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 hover:text-gray-800"
+      title="Generar el reporte de turno (últimas 8 h)"
+      aria-label="Generar reporte de turno"
+      @click="emit('reporte')"
+    >
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M8 13h8M8 17h5" />
+      </svg>
+      <span class="hidden sm:inline">Reporte</span>
+    </button>
+
     <!-- Reinicio: vuelve la demo a vacío para repetir la simulación -->
     <button
       v-if="transmitiendo"
@@ -55,7 +69,7 @@
 import { computed } from "vue";
 import { useEventoDemo } from "@/composables/useEventoDemo";
 
-const emit = defineEmits(["simular", "reiniciar"]);
+const emit = defineEmits(["simular", "reiniciar", "reporte"]);
 
 const { fase, transmitiendo } = useEventoDemo();
 

@@ -199,3 +199,29 @@ export const redactarCorreo = async (
   ]);
   return { asunto: r.asunto.slice(0, 120), cuerpo: r.cuerpo };
 };
+
+// --- Narrativa del reporte de turno ---
+// Reglas tomadas del reporte ejecutivo real (Backend-GM, servicios/reporte_service.py).
+
+const SISTEMA_REPORTE = `
+Redactas el RESUMEN EJECUTIVO de un reporte de turno de Planta Demo (bombas de alimentación A y B).
+Reglas:
+- 80 a 150 palabras, un solo párrafo, español profesional, sin markdown ni listas.
+- Menciona primero las alertas CRÍTICA y ALERTA con sensor, bomba y hora; luego los avisos en conjunto.
+- Usa solo los datos entregados; cifras exactas; no calcules tiempos relativos ("hace X minutos").
+- Relaciona una bitácora con una alerta solo si la bitácora es ANTERIOR a la alerta.
+- Si no hubo alertas en el periodo, dilo explícitamente y describe la operación normal.
+- Cierra con la acción prioritaria recomendada.
+`.trim();
+
+export const generarNarrativaReporte = async (
+  reporte: Record<string, unknown>,
+  opciones: { apiKey: string; modelo: string }
+): Promise<string> => {
+  const modelo = new ChatOpenAI({ apiKey: opciones.apiKey, model: opciones.modelo, temperature: 0.2 });
+  const r = await modelo.invoke([
+    new SystemMessage(SISTEMA_REPORTE),
+    new HumanMessage(`Datos del reporte (JSON):\n${JSON.stringify(reporte)}`),
+  ]);
+  return (typeof r.content === "string" ? r.content : r.text ?? "").trim();
+};

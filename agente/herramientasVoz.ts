@@ -7,6 +7,7 @@ import { resolverSensor, normalizarTexto } from "~/utils/resolverSensor";
 import { construirEstadoPlanta, resumenPantalla } from "./estadoPlanta";
 import { capturarGrafico } from "./capturaGrafico";
 import { enfocarSeccion, resaltar, SECCIONES_FOCO, type SeccionFoco } from "./enfocar";
+import { generarReporte, reporteAbierto, duracionLegible, type ReporteTurno } from "./reporteTurno";
 import { correo, enviarBorrador, descartarBorrador, type TipoCorreo } from "./correoAgente";
 
 type Bomba = "A" | "B";
@@ -42,6 +43,11 @@ Correos (solo sobre fallas, alertas o gráficos de la planta):
   de qué trata, y PREGUNTA si lo envías. Llama enviar_correo únicamente después de que el usuario
   diga claramente que sí. Si pide cambios, vuelve a llamar preparar_correo con el motivo ajustado.
 - Si pide algo ajeno a la planta, explica que solo envías correos de fallas, alertas o gráficos.
+
+Reporte de turno:
+- "Reporte del turno", "informe", "resumen de las últimas horas" → generar_reporte (8 horas por
+  defecto). Se abre en pantalla; resume en 2 o 3 frases lo más grave. Si pidieron enviarlo, pasa
+  los destinatarios en enviar_a: queda un borrador y aplica la misma regla de confirmación del correo.
 
 Reglas estrictas sobre datos:
 - NO describas valores, tendencias, picos ni estados de sensores a partir de lo que "se ve": tú no
@@ -212,6 +218,28 @@ export const HERRAMIENTAS_VOZ = [
   },
   {
     type: "function",
+    name: "generar_reporte",
+    description: "Genera el reporte de turno (estado operativo, resumen ejecutivo, alertas por nivel con acción recomendada, sensores con lecturas anómalas y bitácoras) y lo abre en pantalla. Opcionalmente deja un borrador de correo con el reporte.",
+    parameters: {
+      type: "object",
+      properties: {
+        horas: { type: "number", enum: [1, 4, 8, 12, 24], description: "Ventana del reporte en horas (8 = turno)." },
+        enviar_a: {
+          type: "array",
+          items: { type: "string" },
+          description: "Opcional: destinatarios (nombres de la agenda o correos) para preparar el borrador del correo.",
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    name: "cerrar_reporte",
+    description: "Cierra el reporte abierto en pantalla.",
+    parameters: { type: "object", properties: {} },
+  },
+  {
+    type: "function",
     name: "enviar_correo",
     description: "Envía el borrador en pantalla. Solo después de que el usuario confirmó explícitamente.",
     parameters: { type: "object", properties: {} },
@@ -249,6 +277,8 @@ export const ETIQUETAS_HERRAMIENTA: Record<string, string> = {
   enfocar: "Enfocando sección",
   consultar_analista: "Consultando al analista",
   preparar_correo: "Preparando correo",
+  generar_reporte: "Generando reporte de turno",
+  cerrar_reporte: "Cerrando reporte",
   enviar_correo: "Enviando correo",
   cancelar_correo: "Descartando correo",
 };
@@ -280,7 +310,7 @@ const cargarAgenda = async () =>
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 // Nombres de la agenda o direcciones (también dictadas: "juan arroba empresa punto cl").
-const resolverDestinatarios = async (lista: string[] = []) => {
+export const resolverDestinatarios = async (lista: string[] = []) => {
   const agenda = await cargarAgenda();
   const para: string[] = [];
   const faltan: string[] = [];
@@ -330,6 +360,37 @@ const capturarPedido = async (gr: any): Promise<{ imagen: string; descripcion: s
   const indice = ({ sistema: 0, A: 1, B: 2 } as Record<string, number>)[gr.tarjeta] ?? 0;
   const nombre = indice === 0 ? "Eficiencia vs potencia del sistema" : `Eficiencia Bomba ${indice === 1 ? "A" : "B"}`;
   return capturarGrafico({ tipo: "echarts", indiceEcharts: indice, titulo: nombre, oscuro: estadoUI.temaOscuro });
+};
+
+// --- Reporte de turno ---
+
+const resumenReporteVoz = (r: ReporteTurno) => {
+  const n = r.alertas.por_nivel;
+  const top = r.alertas.lista.slice(0, 3).map((a) => `${a.nivel} en ${a.sensor} de la bomba ${a.bomba} a las ${a.hora}`);
+  const base =
+    `Reporte abierto en pantalla (${r.periodo.horasReales < r.periodo.horas ? `desde el inicio de la transmisión, hace ${duracionLegible(r.periodo.horasReales)}` : `${r.periodo.horas} h`}). ` +
+    `Alertas: ${n["CRÍTICA"]} críticas, ${n.ALERTA} alertas y ${n.AVISO} avisos. ` +
+    (top.length ? `Principales: ${top.join("; ")}. ` : "Sin alertas en el periodo. ") +
+    `Sensores con lecturas anómalas: ${r.sensores.length}. Bitácoras del periodo: ${r.bitacoras.length}.`;
+  return r.narrativa ? `${base} Resumen ejecutivo: ${r.narrativa}` : base;
+};
+
+export const borradorDeReporte = (r: ReporteTurno, para: string[]) => {
+  const fecha = new Date(r.generado).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" });
+  const n = r.alertas.por_nivel;
+  return {
+    para,
+    asunto: `Reporte de turno · Planta Demo · ${fecha}`,
+    cuerpo:
+      (r.narrativa ?? "Reporte de turno generado automáticamente.") +
+      `\n\nResumen: ${n["CRÍTICA"]} alertas críticas, ${n.ALERTA} alertas y ${n.AVISO} avisos; ` +
+      `${r.sensores.length} sensores con lecturas anómalas. El detalle va en las tablas de este correo.`,
+    tipo: "reporte" as const,
+    imagen: null,
+    descripcionGrafico: null,
+    reporte: r,
+    creadoEn: Date.now(),
+  };
 };
 
 type Ejecutor = (args: any) => Promise<string>;
@@ -424,6 +485,24 @@ const EJECUTORES: Record<string, Ejecutor> = {
       aviso +
       " Resume en una frase y pregunta si lo envías; no lo envíes sin un sí explícito."
     );
+  },
+
+  generar_reporte: async ({ horas = 8, enviar_a }) => {
+    const r = await generarReporte(horas);
+    const resumen = resumenReporteVoz(r);
+    if (!enviar_a?.length) return resumen;
+    const { para, faltan, agenda } = await resolverDestinatarios(enviar_a);
+    if (!para.length || faltan.length) {
+      const nombres = agenda.map((a) => a.nombre).join(", ") || "(agenda vacía)";
+      return `${resumen} No preparé el correo: no reconocí ${faltan.join(", ") || "los destinatarios"}. Contactos: ${nombres}.`;
+    }
+    correo.borrador.value = borradorDeReporte(r, para);
+    return `${resumen} Dejé listo el borrador del correo con el reporte para ${para.join(", ")}; pregunta si lo envías.`;
+  },
+
+  cerrar_reporte: async () => {
+    reporteAbierto.value = null;
+    return "Reporte cerrado.";
   },
 
   enviar_correo: async () => {

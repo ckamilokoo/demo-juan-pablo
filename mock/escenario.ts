@@ -92,7 +92,7 @@ export const reiniciarEscenario = () => {
 
 // --- Alertas derivadas de las anomalías ---
 
-const ACCIONES: Record<NivelAlerta, string> = {
+export const ACCIONES: Record<NivelAlerta, string> = {
   'CRÍTICA': 'Detener la bomba y activar la de respaldo; inspeccionar descansos y alineamiento.',
   'ALERTA': 'Programar inspección en el turno y aumentar la frecuencia de monitoreo.',
   'AVISO': 'Seguir la tendencia; sin acción inmediata.',

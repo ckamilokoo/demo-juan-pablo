@@ -4,7 +4,7 @@
 import nodemailer from "nodemailer";
 import type { H3Event } from "h3";
 
-export const TIPOS_CORREO = ["falla", "alerta", "grafico"] as const;
+export const TIPOS_CORREO = ["falla", "alerta", "grafico", "reporte"] as const;
 export type TipoCorreo = (typeof TIPOS_CORREO)[number];
 
 const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[a-z]{2,}$/i;
@@ -45,6 +45,55 @@ const ETIQUETA_TIPO: Record<TipoCorreo, { texto: string; color: string }> = {
   falla: { texto: "Reporte de falla", color: "#dc2626" },
   alerta: { texto: "Aviso de alerta", color: "#ea580c" },
   grafico: { texto: "Gráfico compartido", color: "#2563eb" },
+  reporte: { texto: "Reporte de turno", color: "#0f766e" },
+};
+
+// Reporte de turno (formato de agente/reporteTurno.ts). Todo se escapa: viene del navegador.
+export interface ReporteCorreo {
+  periodo?: { desde?: string; hasta?: string; horasReales?: number };
+  estado?: { bomba_activa?: string; eficiencia_a_pct?: number | null; eficiencia_b_pct?: number | null; potencia_neta_mw?: number | null };
+  alertas?: { por_nivel?: Record<string, number>; lista?: Array<Record<string, unknown>> };
+  sensores?: Array<Record<string, unknown>>;
+  bitacoras?: Array<Record<string, unknown>>;
+}
+
+const COLOR_NIVEL: Record<string, string> = { "CRÍTICA": "#dc2626", ALERTA: "#ea580c", AVISO: "#0d9488" };
+const txt = (v: unknown) => escapar(String(v ?? "—"));
+const num = (v: unknown, d = 1) => (typeof v === "number" && isFinite(v) ? v.toLocaleString("es-CL", { maximumFractionDigits: d }) : "—");
+const th = (t: string) => `<th style="text-align:left;padding:6px 8px;font-size:12px;color:#475569;border-bottom:1px solid #e2e8f0">${t}</th>`;
+const td = (t: string, extra = "") => `<td style="padding:6px 8px;font-size:12px;border-bottom:1px solid #f1f5f9;${extra}">${t}</td>`;
+const titulo = (t: string) => `<div style="font-size:14px;font-weight:700;margin:18px 0 6px;color:#0f172a">${t}</div>`;
+const tabla = (cab: string[], filas: string[]) =>
+  `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">
+     <tr>${cab.map(th).join("")}</tr>${filas.join("") || `<tr>${td("Sin registros en el periodo", "color:#94a3b8")}</tr>`}
+   </table>`;
+
+const seccionesReporte = (r: ReporteCorreo) => {
+  const e = r.estado ?? {};
+  const pn = r.alertas?.por_nivel ?? {};
+  const alertas = (r.alertas?.lista ?? []).slice(0, 25).map((a) => {
+    const nivel = String(a.nivel ?? "");
+    return `<tr>${td(`<b style="color:${COLOR_NIVEL[nivel] ?? "#334155"}">${txt(nivel)}</b>`)}${td(txt(a.sensor))}${td(txt(a.bomba))}${td(txt(a.hora))}${td(txt(a.accion))}</tr>`;
+  });
+  const sensores = (r.sensores ?? []).slice(0, 15).map(
+    (s) =>
+      `<tr>${td(txt(s.sensor))}${td(txt(s.bomba))}${td(`${num(s.actual)} ${txt(s.unidad)}`)}${td(`${num(s.min)} – ${num(s.max)}`)}${td(num(s.umbral))}${td(`${num(s.lecturas_anomalas, 0)}/${num(s.lecturas_totales, 0)}`)}</tr>`
+  );
+  const bitacoras = (r.bitacoras ?? []).slice(0, 20).map(
+    (b) => `<tr>${td(`<b style="color:${COLOR_NIVEL[String(b.nivel)] ?? "#334155"}">${txt(b.nivel)}</b>`)}${td(txt(b.bomba))}${td(txt(b.fecha))}${td(txt(b.texto))}</tr>`
+  );
+  return `
+    ${titulo("Estado operativo")}
+    <div style="font-size:13px;line-height:1.6">
+      Bomba en operación: <b>${txt(e.bomba_activa)}</b> · Eficiencia A: <b>${num(e.eficiencia_a_pct)} %</b> ·
+      Eficiencia B: <b>${num(e.eficiencia_b_pct)} %</b> · Potencia neta: <b>${num(e.potencia_neta_mw)} MW</b>
+    </div>
+    ${titulo(`Alertas del periodo (críticas ${num(pn["CRÍTICA"], 0)} · alertas ${num(pn.ALERTA, 0)} · avisos ${num(pn.AVISO, 0)})`)}
+    ${tabla(["Nivel", "Sensor", "Bomba", "Hora", "Acción recomendada"], alertas)}
+    ${titulo("Sensores con lecturas anómalas")}
+    ${tabla(["Sensor", "Bomba", "Actual", "Mín – Máx", "Umbral", "Anómalas"], sensores)}
+    ${titulo("Bitácoras del periodo")}
+    ${tabla(["Nivel", "Bomba", "Fecha", "Registro"], bitacoras)}`;
 };
 
 export const plantillaCorreo = (o: {
@@ -53,6 +102,7 @@ export const plantillaCorreo = (o: {
   cuerpo: string;
   descripcionGrafico?: string;
   conImagen: boolean;
+  reporte?: ReporteCorreo;
 }) => {
   const etiqueta = ETIQUETA_TIPO[o.tipo];
   const parrafos = o.cuerpo
@@ -72,7 +122,7 @@ export const plantillaCorreo = (o: {
         <tr><td style="padding:20px 24px 4px">
           <span style="display:inline-block;background:${etiqueta.color}1a;color:${etiqueta.color};font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px">${etiqueta.texto}</span>
         </td></tr>
-        <tr><td style="padding:12px 24px 6px;font-size:15px">${parrafos}</td></tr>
+        <tr><td style="padding:12px 24px 6px;font-size:15px">${parrafos}${o.reporte ? seccionesReporte(o.reporte) : ""}</td></tr>
         ${
           o.conImagen
             ? `<tr><td style="padding:0 24px 8px">

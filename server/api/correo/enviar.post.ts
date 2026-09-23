@@ -10,6 +10,7 @@ import {
   plantillaCorreo,
   enviarCorreoSmtp,
   type TipoCorreo,
+  type ReporteCorreo,
 } from "../../utils/correo";
 
 interface Cuerpo {
@@ -19,6 +20,7 @@ interface Cuerpo {
   tipo?: TipoCorreo;
   imagen?: string; // data:image/png;base64,...
   descripcionGrafico?: string;
+  reporte?: ReporteCorreo; // solo para tipo "reporte"
 }
 
 export default defineEventHandler(async (event) => {
@@ -33,7 +35,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: `Destinatarios inválidos (1 a ${MAX_DESTINATARIOS} correos válidos)` });
   }
   if (!b?.tipo || !TIPOS_CORREO.includes(b.tipo)) {
-    throw createError({ statusCode: 400, statusMessage: "Tipo inválido: solo fallas, alertas o gráficos" });
+    throw createError({ statusCode: 400, statusMessage: "Tipo inválido: solo fallas, alertas, gráficos o reportes" });
   }
   const asunto = String(b.asunto ?? "").trim().slice(0, 150);
   const cuerpo = String(b.cuerpo ?? "").trim().slice(0, 5000);
@@ -57,7 +59,14 @@ export default defineEventHandler(async (event) => {
       para,
       asunto,
       texto: cuerpo + (b.descripcionGrafico ? `\n\n[Gráfico: ${b.descripcionGrafico}]` : ""),
-      html: plantillaCorreo({ tipo: b.tipo, asunto, cuerpo, descripcionGrafico: b.descripcionGrafico, conImagen: !!imagenPngBase64 }),
+      html: plantillaCorreo({
+        tipo: b.tipo,
+        asunto,
+        cuerpo,
+        descripcionGrafico: b.descripcionGrafico,
+        conImagen: !!imagenPngBase64,
+        reporte: b.tipo === "reporte" && b.reporte && typeof b.reporte === "object" ? b.reporte : undefined,
+      }),
       imagenPngBase64,
     });
     return { ok: true, id: info.messageId, para };

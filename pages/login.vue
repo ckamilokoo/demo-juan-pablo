@@ -151,7 +151,7 @@
         <div class="access-label">ACCESO SEGURO</div>
         <h2 class="welcome">Bienvenido</h2>
         <p class="welcome-desc">
-          Entorno de demostración con datos simulados. Ingresa con cualquier usuario y contraseña.
+          Entorno de demostración con datos simulados. Presiona el botón para entrar.
         </p>
 
         <!-- Sin esto el usuario vuelve al login sin saber por qué -->
@@ -164,15 +164,6 @@
         </div>
 
         <form class="login-form" @submit.prevent="login">
-          <label class="field">
-            <span>Usuario</span>
-            <input v-model="usuario" type="text" autocomplete="username" placeholder="operador@planta.demo" />
-          </label>
-          <label class="field">
-            <span>Contraseña</span>
-            <input v-model="clave" type="password" autocomplete="current-password" placeholder="••••••••" />
-          </label>
-
           <button class="login-btn" type="submit" :disabled="ingresando">
             <svg v-if="!ingresando" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
@@ -233,16 +224,14 @@ const avisoSesion = computed(() => {
   return null;
 });
 
-const usuario = ref("");
-const clave = ref("");
 const ingresando = ref(false);
 
-// Login de demostración: acepta cualquier credencial. La pequeña espera solo
-// da tiempo a que se vea el estado "Ingresando…".
+// Login de demostración: sin credenciales, el botón entra directo con un
+// usuario demo. La pequeña espera solo deja ver el estado "Ingresando…".
 const login = async () => {
   ingresando.value = true;
   await new Promise((r) => setTimeout(r, 600));
-  $auth.login(usuario.value);
+  $auth.login();
   await navigateTo("/");
 };
 

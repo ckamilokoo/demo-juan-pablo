@@ -100,9 +100,14 @@
             class="w-full resize-none rounded-md border px-2 py-1 text-xs leading-snug outline-none focus:ring-2 focus:ring-orange-300"
             :class="isDarkMode ? 'border-slate-600 bg-slate-900' : 'border-slate-200 bg-white'"
           ></textarea>
+          <p v-if="borrador.reporte" class="mt-2 rounded-md px-2 py-1 text-xs" :class="isDarkMode ? 'bg-slate-900 text-teal-300' : 'bg-teal-50 text-teal-700'">
+            Incluye el reporte de turno: {{ borrador.reporte.alertas.lista.length }} alertas,
+            {{ borrador.reporte.sensores.length }} sensores y {{ borrador.reporte.bitacoras.length }} bitácoras en tablas.
+          </p>
           <a v-if="borrador.imagen" :href="borrador.imagen" target="_blank" rel="noopener" class="mt-2 block" title="Ver imagen completa">
             <img :src="borrador.imagen" :alt="borrador.descripcionGrafico || 'Gráfico'" class="max-h-28 w-full rounded-md border object-contain" :class="isDarkMode ? 'border-slate-600' : 'border-slate-200'" />
           </a>
+          <button class="mt-2 text-xs font-medium text-blue-500 hover:underline" @click="verCorreo">Ver cómo se verá el correo ↗</button>
           <p v-if="errorCorreo" class="mt-2 rounded bg-red-50 px-2 py-1 text-xs text-red-700">{{ errorCorreo }}</p>
           <div class="mt-2 flex justify-end gap-2">
             <button class="rounded-full px-3 py-1 text-xs font-medium opacity-70 hover:opacity-100" :disabled="enviandoCorreo" @click="descartar">Descartar</button>
@@ -211,6 +216,25 @@ const enviarCorreo = async () => {
   if (r.ok) registrarAccion(r.mensaje);
   else errorCorreo.value = r.mensaje;
 };
+// Vista previa del HTML real del correo en una pestaña nueva (no envía nada).
+const verCorreo = async () => {
+  const b = borrador.value;
+  if (!b) return;
+  const pestana = window.open("", "_blank");
+  try {
+    const html = await $fetch("/api/correo/vista-previa", {
+      method: "POST",
+      body: { asunto: b.asunto, cuerpo: b.cuerpo, tipo: b.tipo, imagen: b.imagen ?? undefined, descripcionGrafico: b.descripcionGrafico ?? undefined, reporte: b.reporte ?? undefined },
+      responseType: "text",
+    });
+    const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+    if (pestana) pestana.location.href = url;
+  } catch (e) {
+    pestana?.close();
+    errorCorreo.value = "No se pudo generar la vista previa.";
+  }
+};
+
 const descartar = () => {
   descartarBorrador();
   registrarAccion("El usuario descartó el borrador de correo.");
