@@ -3,6 +3,7 @@
 // instancia de ECharts, así sale nítido y sin el resto de la interfaz.
 import { Chart } from "chart.js";
 import { normalizarTexto } from "~/utils/resolverSensor";
+import { ahoraSim } from "~/mock/escenario";
 
 export interface CapturaGrafico {
   imagen: string; // data:image/png;base64,...
@@ -57,7 +58,7 @@ const componer = (fuente: CanvasImageSource, ancho: number, alto: number, titulo
   ctx.fillText(titulo, 16, 32);
   ctx.globalAlpha = 0.6;
   ctx.font = "14px Segoe UI, Arial, sans-serif";
-  ctx.fillText(new Date().toLocaleString("es-CL"), 16, 50);
+  ctx.fillText(new Date(ahoraSim()).toLocaleString("es-CL"), 16, 50); // hora de planta
   ctx.globalAlpha = 1;
   ctx.drawImage(fuente, 16, franja, w, h);
   return c.toDataURL("image/png");

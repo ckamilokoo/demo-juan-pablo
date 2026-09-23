@@ -7,6 +7,7 @@ import { PASO_VIVO_S } from '~/config/demo';
 import { normalizarSlug, perfilDe } from './perfiles';
 import {
   escenario,
+  ahoraSim,
   alertasVisibles,
   anomaliaPorId,
   type Anomalia,
@@ -72,7 +73,7 @@ export const leerSenal = (bomba: Bomba, slug: string, t: number): Lectura => {
     p.amplitud *
       (0.55 * Math.sin((2 * Math.PI * s) / 86400 + semilla * 6.28) +
         0.3 * Math.sin((2 * Math.PI * s) / 1700 + semilla * 12.1) +
-        0.15 * Math.sin((2 * Math.PI * s) / 97 + semilla * 3.7)) +
+        0.15 * Math.sin((2 * Math.PI * s) / 780 + semilla * 3.7)) +
     p.ruido * ruido(semilla, Math.round(s));
 
   let factor = 0;
@@ -89,8 +90,9 @@ export const leerSenal = (bomba: Bomba, slug: string, t: number): Lectura => {
   return { valor: redondear(valor, p.decimales), clasificacion };
 };
 
+// Datos por minuto: la hora basta con HH:MM.
 const horaTexto = (t: number) =>
-  new Date(t).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  new Date(t).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
 
 // Primer instante con datos: el inicio de la transmisión (null = sin datos).
 const inicioDatos = () => escenario.transmisionInicio;
@@ -101,7 +103,7 @@ const serieVivo = (bomba: Bomba, slug: string, limite: number) => {
   const inicio = inicioDatos();
   if (inicio === null) return [];
   const paso = PASO_VIVO_S * 1000;
-  const ultimo = Math.floor(Date.now() / paso) * paso;
+  const ultimo = Math.floor(ahoraSim() / paso) * paso;
   const filas = [];
   for (let i = limite - 1; i >= 0; i--) {
     const t = ultimo - i * paso;
@@ -124,7 +126,7 @@ const serieRango = (bomba: Bomba, slug: string, desdePedido: number, hasta: numb
   const inicio = inicioDatos();
   if (inicio === null) return [];
   const desde = Math.max(desdePedido, inicio);
-  const fin = Math.min(hasta, Date.now());
+  const fin = Math.min(hasta, ahoraSim());
   if (fin <= desde) return [];
   const paso = Math.max(PASO_VIVO_S * 1000, Math.ceil((fin - desde) / maxPuntos / 1000) * 1000);
   const filas = [];
@@ -156,7 +158,7 @@ const estadisticas = (datos: Array<{ es_anomalia: boolean }>) => {
 const gridDias = (dias: number, maxPuntos: number) => {
   const inicio = inicioDatos();
   if (inicio === null) return [];
-  const ahora = Date.now();
+  const ahora = ahoraSim();
   // Eficiencia y potencia son registros agregados de planta: al conectarse
   // se descarga también el histórico reciente, para que los gráficos tengan
   // líneas completas que dibujar (las señales de sensores parten de cero).
@@ -269,7 +271,7 @@ export const responder = (url: string): RespuestaSimulada => {
   if (ruta === '/bomba_activa/actual') return ok({ bomba_activa: escenario.bombaActiva });
 
   if (ruta === '/estado-datos/ultima-carga') {
-    const ahora = new Date();
+    const ahora = new Date(ahoraSim());
     if (inicioDatos() === null) {
       const vacio = { ultima_carga: null, texto: null, hace_minutos: null };
       return ok({ ahora: ahora.toISOString(), zona_horaria: 'America/Santiago', senales: vacio, bitacoras: vacio });

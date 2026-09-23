@@ -61,6 +61,7 @@ En la aplicación real, todas las peticiones al backend pasan por `utils/authFet
 Componente → composable (Vue Query) → authFetch(url) → mock/simulador.ts → JSON dummy
 ```
 
+- **Reloj de planta acelerado** (`config/demo.ts`: `FACTOR_TIEMPO = 20`): como en producción hay **1 dato por minuto**, pero cada 3 s reales avanza 1 minuto de planta. Los gráficos reciben un punto nuevo cada 3 s y los ejes muestran minutos distintos. Consecuencia: tras unos minutos de demo, la hora de planta queda adelantada respecto del reloj real (5 min reales ≈ 1 h 40 min de planta). Con `FACTOR_TIEMPO = 1` y `REFRESCO_DEMO_MS = 60000` la demo corre en tiempo real exacto.
 - `mock/simulador.ts` — genera series temporales (seno + ruido + deriva) deterministas por timestamp, con rangos realistas por unidad (°C, barg, kg/h, A, ms, MW).
 - `mock/escenario.ts` — estado de la demo: inicio de la transmisión, anomalías, alertas derivadas y bomba activa. Antes de iniciar la transmisión todos los endpoints responden vacío.
 - `composables/useEventoDemo.ts` — secuencia guiada del botón (fases, episodio correlacionado, refrescos).

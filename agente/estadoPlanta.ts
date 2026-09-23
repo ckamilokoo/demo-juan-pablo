@@ -1,7 +1,7 @@
 // Foto del estado de la planta y de la pantalla, en el formato que consumen
 // el agente de voz y el analista LangGraph. Se arma en el navegador porque
 // ahí viven los datos (simulador) y el estado de la interfaz.
-import { escenario, alertasVisibles } from "~/mock/escenario";
+import { escenario, alertasVisibles, ahoraSim } from "~/mock/escenario";
 import { leerSenal, ultimaEficiencia, bitacorasActuales } from "~/mock/simulador";
 import { perfilDe } from "~/mock/perfiles";
 import { buscarConfigSensor } from "~/config/sensoresAnomaliasConfig";
@@ -43,7 +43,7 @@ const ESTADOS = { 1: "normal", "-1": "anómalo", 0: "sin clasificar" } as const;
 
 export const construirEstadoPlanta = (): EstadoPlanta => {
   const transmitiendo = escenario.transmisionInicio !== null;
-  const ahora = Date.now();
+  const ahora = ahoraSim();
 
   const sensores = (bomba: "A" | "B") =>
     !transmitiendo

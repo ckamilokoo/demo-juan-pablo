@@ -8,7 +8,7 @@ import { construirEstadoPlanta, resumenPantalla } from "./estadoPlanta";
 import { capturarGrafico } from "./capturaGrafico";
 import { enfocarSeccion, resaltar, SECCIONES_FOCO, type SeccionFoco } from "./enfocar";
 import { generarReporte, reporteAbierto, duracionLegible, type ReporteTurno } from "./reporteTurno";
-import { alertasVisibles, escenario } from "~/mock/escenario";
+import { alertasVisibles, escenario, ahoraSim } from "~/mock/escenario";
 import { buscarConfigSensor } from "~/config/sensoresAnomaliasConfig";
 import { conocimientoDe } from "~/config/conocimientoSensores";
 import { leerSenal } from "~/mock/simulador";
@@ -521,7 +521,7 @@ const EJECUTORES: Record<string, Ejecutor> = {
       partes.push(`${k.nombre}: ${k.que_mide} ${k.por_que_importa} Causas típicas: ${k.causas_tipicas.join("; ")}.`);
     }
     if (escenario.transmisionInicio !== null) {
-      const { valor, clasificacion } = leerSenal(b, s.endpoint, Date.now());
+      const { valor, clasificacion } = leerSenal(b, s.endpoint, ahoraSim());
       const estado = clasificacion === -1 ? "anómala" : clasificacion === 1 ? "normal" : "sin clasificar";
       partes.push(`Lectura actual bomba ${b}: ${valor} ${s.unidad} (umbral ${perfilDe(s.endpoint).umbral}), clasificada ${estado}.`);
     }

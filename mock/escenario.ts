@@ -4,6 +4,7 @@
 import { buscarConfigSensor } from '~/config/sensoresAnomaliasConfig';
 import { perfilDe, normalizarSlug } from './perfiles';
 import { conocimientoDe } from '~/config/conocimientoSensores';
+import { FACTOR_TIEMPO } from '~/config/demo';
 
 export type Bomba = 'A' | 'B';
 export type NivelAlerta = 'CRÍTICA' | 'ALERTA' | 'AVISO';
@@ -43,6 +44,18 @@ export const escenario: { anomalias: Anomalia[]; bombaActiva: EstadoBomba; trans
     transmisionInicio: null as number | null,
   });
 
+/**
+ * Hora de planta (ms epoch). Antes de transmitir coincide con la real; desde
+ * el inicio de la transmisión avanza FACTOR_TIEMPO veces más rápido.
+ */
+export const ahoraSim = (): number => {
+  const i = escenario.transmisionInicio;
+  return i === null ? Date.now() : i + (Date.now() - i) * FACTOR_TIEMPO;
+};
+
+/** Convierte una duración de planta a tiempo real (para setTimeout). */
+export const msSimAReal = (ms: number) => ms / FACTOR_TIEMPO;
+
 export const iniciarTransmision = () => {
   escenario.transmisionInicio = Date.now();
   escenario.bombaActiva = 'A';
@@ -69,7 +82,9 @@ export const dispararAnomalia = (
   nivelForzado?: NivelAlerta,
   { duracionS = 75, retrasoMs = 0 } = {}
 ): Anomalia => {
-  const inicio = Date.now() + retrasoMs;
+  // retrasoMs y duracionS vienen en tiempo REAL (lo que ve el presentador);
+  // se convierten a tiempo de planta.
+  const inicio = ahoraSim() + retrasoMs * FACTOR_TIEMPO;
   const ocurrencia = ocurrenciasPrevias(bomba, sensor) + 1;
   const nivel = nivelForzado ?? nivelPorOcurrencia(ocurrencia);
   const anomalia: Anomalia = {
@@ -77,10 +92,10 @@ export const dispararAnomalia = (
     bomba,
     sensor,
     inicio,
-    fin: inicio + duracionS * 1000,
+    fin: inicio + duracionS * 1000 * FACTOR_TIEMPO,
     nivel,
     intensidad: nivel === 'AVISO' ? 0.6 : nivel === 'ALERTA' ? 0.8 : 1,
-    deteccion: inicio + 9000,
+    deteccion: inicio + 9000 * FACTOR_TIEMPO,
     ocurrencia,
   };
   escenario.anomalias.push(anomalia);
@@ -138,7 +153,7 @@ export const alertaDe = (a: Anomalia) => ({
 
 /** Alertas visibles (ya detectadas) dentro de los últimos `dias`, más nuevas primero. */
 export const alertasVisibles = (dias: number) => {
-  const ahora = Date.now();
+  const ahora = ahoraSim();
   const desde = ahora - dias * 24 * HORA;
   return escenario.anomalias
     .filter((a) => a.deteccion <= ahora && a.deteccion >= desde)

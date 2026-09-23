@@ -4,7 +4,7 @@
 //   1. Estado operativo   2. Resumen ejecutivo (LLM)   3. Alertas por nivel
 //   4. Sensores con lecturas anómalas (actual/mín/máx)   5. Bitácoras del periodo
 import { ref, type Ref } from "vue";
-import { escenario, alertasVisibles, accionRecomendada, type NivelAlerta } from "~/mock/escenario";
+import { escenario, alertasVisibles, accionRecomendada, ahoraSim, type NivelAlerta } from "~/mock/escenario";
 import { leerSenal, ultimaEficiencia, bitacorasActuales } from "~/mock/simulador";
 import { perfilDe } from "~/mock/perfiles";
 import { buscarConfigSensor } from "~/config/sensoresAnomaliasConfig";
@@ -55,7 +55,7 @@ export const duracionLegible = (horas: number) =>
 
 /** Arma los datos del reporte de las últimas `horas` (o desde que empezó la transmisión). */
 export const construirReporte = (horas = 8): ReporteTurno => {
-  const ahora = Date.now();
+  const ahora = ahoraSim();
   const desdePedido = ahora - horas * HORA_MS;
   const inicio = escenario.transmisionInicio;
   const desde = inicio === null ? ahora : Math.max(desdePedido, inicio);
@@ -63,7 +63,7 @@ export const construirReporte = (horas = 8): ReporteTurno => {
   // Sensores: muestreo de la ventana; solo los que tuvieron lecturas anómalas.
   const sensores: ReporteTurno["sensores"] = [];
   if (inicio !== null) {
-    const paso = Math.max(3000, Math.ceil((ahora - desde) / MAX_MUESTRAS));
+    const paso = Math.max(60_000, Math.ceil((ahora - desde) / MAX_MUESTRAS)); // datos por minuto
     for (const bomba of ["A", "B"] as const) {
       for (const s of catalogoSensores(bomba)) {
         let min = Infinity, max = -Infinity, anomalas = 0, total = 0;

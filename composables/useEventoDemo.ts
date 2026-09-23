@@ -8,6 +8,8 @@ import {
   iniciarTransmision,
   reiniciarEscenario,
   escenario,
+  ahoraSim,
+  msSimAReal,
   type Anomalia,
   type Bomba,
 } from "~/mock/escenario";
@@ -32,17 +34,19 @@ const programar = (ms: number, fn: () => void) => {
 // Fases del indicador: "recibiendo" hasta que empieza el desvío, "analizando"
 // mientras el modelo lo evalúa y "detectada" cuando existe la alerta.
 const programarFases = (principal: Anomalia, detecciones: number[], alDetectar?: () => void) => {
-  const ahora = Date.now();
+  // Las anomalías están en hora de planta; los timers, en tiempo real.
+  const ahora = ahoraSim();
+  const enReal = (tSim: number) => msSimAReal(tSim - ahora);
   fase.value = "recibiendo";
-  programar(principal.inicio - ahora, () => (fase.value = "analizando"));
+  programar(enReal(principal.inicio), () => (fase.value = "analizando"));
   detecciones.forEach((t, i) =>
-    programar(t - ahora + 150, () => {
+    programar(enReal(t) + 150, () => {
       if (i === 0) fase.value = "detectada";
       alDetectar?.();
     })
   );
   const ultima = Math.max(...detecciones);
-  programar(ultima - ahora + 8000, () => (fase.value = "inactivo"));
+  programar(enReal(ultima) + 8000, () => (fase.value = "inactivo"));
 };
 
 // Sensor principal de cada "Simular evento", en rotación por bomba.

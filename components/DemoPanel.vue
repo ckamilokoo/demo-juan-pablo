@@ -83,7 +83,7 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { getAllSensores } from '@/config/bombasConfig';
 import { getAllSensores as getSensoresUI } from '@/config/sensoresConfig';
-import { escenario, cambiarBombaActiva } from '~/mock/escenario';
+import { escenario, cambiarBombaActiva, ahoraSim, msSimAReal } from '~/mock/escenario';
 import { useEventoDemo } from '@/composables/useEventoDemo';
 
 const ESTADOS = ['A', 'B', 'A/B', 'O'];
@@ -123,7 +123,7 @@ const disparar = () => {
   ultimo.value = `${a.nivel} #${a.ocurrencia} en ${titulo} (Bomba ${a.bomba}). La alerta aparece en ~9 s.`;
   refrescar();
   // Segundo refresco cuando el modelo "la detecta" y se crea la alerta.
-  setTimeout(refrescar, a.deteccion - Date.now() + 100);
+  setTimeout(refrescar, msSimAReal(a.deteccion - ahoraSim()) + 100);
 };
 
 const setBomba = (e) => {
