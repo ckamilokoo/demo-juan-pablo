@@ -21,7 +21,7 @@
     <button
       class="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 sm:px-4 py-1.5 text-sm font-semibold text-white shadow transition disabled:cursor-not-allowed disabled:opacity-60"
       :aria-label="enCurso ? 'Simulando' : transmitiendo ? 'Simular evento' : 'Iniciar transmisión'"
-      :class="enCurso ? 'bg-gray-500' : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 hover:shadow-md'"
+      :class="enCurso ? 'bg-gray-500' : 'bg-gradient-to-r from-orange-700 to-red-600 hover:from-orange-800 hover:to-red-700 hover:shadow-md'"
       :disabled="enCurso"
       title="Simula la llegada de datos de planta con una anomalía y su detección"
       @click="emit('simular')"

@@ -277,7 +277,7 @@
       <!-- Vista Conjunto: sensor principal + episodio sobre una ventana temporal común -->
       <div v-else class="mb-6 p-4">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-          <p class="text-xs text-gray-500">
+          <p class="text-xs text-gray-600">
             <template v-if="conjuntoNormalizado">
               Valores normalizados al rango de cada sensor (0-100%). Pasa el cursor para ver valores reales.
             </template>

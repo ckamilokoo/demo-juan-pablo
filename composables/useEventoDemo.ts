@@ -2,7 +2,7 @@
 // primer evento "conecta" la planta (empiezan a llegar señales) y, unos
 // segundos después, un sensor escala aviso → alerta → crítica según su
 // propio contador. Los eventos siguientes escalan otros sensores.
-import { ref, readonly } from "vue";
+import { ref, readonly, type Ref } from "vue";
 import {
   dispararAnomalia,
   iniciarTransmision,
@@ -14,8 +14,10 @@ import {
 
 export type FaseEvento = "inactivo" | "recibiendo" | "analizando" | "detectada";
 
-const fase = ref<FaseEvento>("inactivo");
-const transmitiendo = ref(false);
+// Singleton global (sobrevive a copias del módulo por recarga en caliente).
+const G = ((globalThis as any).__eventoDemo ??= { fase: ref<FaseEvento>("inactivo"), transmitiendo: ref(false) });
+const fase: Ref<FaseEvento> = G.fase;
+const transmitiendo: Ref<boolean> = G.transmitiendo;
 let timers: ReturnType<typeof setTimeout>[] = [];
 
 const limpiarTimers = () => {

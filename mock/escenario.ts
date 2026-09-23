@@ -27,15 +27,21 @@ export interface Anomalia {
 
 const HORA = 60 * 60_000;
 
-let siguienteId = 1000;
+// Continúa la numeración aunque el módulo se recargue (ids de alerta únicos).
+let siguienteId = Math.max(1000, ...((globalThis as any).__escenarioDemo?.anomalias ?? []).map((a: Anomalia) => a.id + 1));
 
 // La demo arranca vacía: no hay datos hasta que se inicia la transmisión.
 // Desde ese instante las señales "llegan" en vivo; nada existe antes.
-export const escenario = {
-  anomalias: [] as Anomalia[],
-  bombaActiva: 'O' as EstadoBomba,
-  transmisionInicio: null as number | null,
-};
+// En globalThis: si la recarga en caliente carga dos copias de este módulo,
+// ambas comparten el mismo estado. Antes "Reiniciar" podía limpiar una copia
+// mientras el simulador seguía leyendo la otra (p. ej. bitácoras que no se
+// borraban).
+export const escenario: { anomalias: Anomalia[]; bombaActiva: EstadoBomba; transmisionInicio: number | null } =
+  ((globalThis as any).__escenarioDemo ??= {
+    anomalias: [] as Anomalia[],
+    bombaActiva: 'O' as EstadoBomba,
+    transmisionInicio: null as number | null,
+  });
 
 export const iniciarTransmision = () => {
   escenario.transmisionInicio = Date.now();

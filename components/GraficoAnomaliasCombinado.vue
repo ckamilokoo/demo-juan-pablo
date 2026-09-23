@@ -66,7 +66,7 @@
             v-for="(ds, index) in datasetsListos"
             :key="ds.label"
             class="px-3 py-1.5 rounded-full text-sm font-medium text-white flex items-center gap-2"
-            :style="{ backgroundColor: getColorBorde(index) }"
+            :style="{ backgroundColor: getColorBorde(index), backgroundImage: 'linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35))' }"
           >
             <span class="text-lg">{{ getForma(index) }}</span>
             {{ ds.label }} ({{ ds.unidad }})<template v-if="ds.tag"> / {{ ds.tag }}</template>

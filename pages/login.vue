@@ -366,7 +366,7 @@ const telemetryDots = computed(() =>
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 3px;
-  color: #ff6a2c;
+  color: #fb923c; /* naranja más claro: 4.5:1 sobre el fondo azul oscuro */
   margin-bottom: 14px;
 }
 

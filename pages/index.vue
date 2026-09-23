@@ -205,7 +205,12 @@ const resetKey = ref(0);
 const reiniciarDemo = async () => {
   evento.reiniciar();
   reporteAbierto.value = null;
+  // Cancelar pedidos en vuelo (podrían traer datos de antes del reinicio),
+  // vaciar la caché y volver a pedir TODO, incluidas las consultas de vistas
+  // que están en segundo plano (KeepAlive), no solo las visibles.
+  await queryClient.cancelQueries();
   await queryClient.resetQueries();
+  await queryClient.refetchQueries({ type: 'all' });
   resetKey.value++;
   selectNavItem('overview');
 };

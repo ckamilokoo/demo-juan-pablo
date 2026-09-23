@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/vue-query";
 import { authFetch } from "~/utils/authFetch";
 import { BOMBAS_CONFIG, type BombaId } from "~/config/bombasConfig";
 
+const REFRESCO_BITACORAS_MS = 10_000;
+
 /**
  * Factory function para crear composables de bitacoras
  * Genera las queries para bitacoras normales y de fallas
@@ -32,16 +34,20 @@ export const createUseBitacoras = (bombaId: BombaId) => {
     const { data: bitacoras, isLoading: bitacorasLoading } = useQuery({
       queryKey: [queryKeyPrefix],
       queryFn: fetchBitacoras,
-      refetchInterval: 15 * 60 * 1000, // 15 minutos
-      staleTime: 10 * 60 * 1000,
+      // Demo: refresco periódico como el resto de los datos, así un reinicio
+      // o el inicio de la transmisión se reflejan sin esperar 15 minutos.
+      refetchInterval: REFRESCO_BITACORAS_MS,
+      staleTime: 0,
     });
 
     // Query para bitacoras de fallas
     const { data: bitacorasFallas, isLoading: bitacorasFallasLoading } = useQuery({
       queryKey: [`${queryKeyPrefix}Fallas`],
       queryFn: fetchBitacorasFallas,
-      refetchInterval: 15 * 60 * 1000, // 15 minutos
-      staleTime: 10 * 60 * 1000,
+      // Demo: refresco periódico como el resto de los datos, así un reinicio
+      // o el inicio de la transmisión se reflejan sin esperar 15 minutos.
+      refetchInterval: REFRESCO_BITACORAS_MS,
+      staleTime: 0,
     });
 
     return {

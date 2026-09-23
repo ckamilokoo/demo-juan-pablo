@@ -6,7 +6,7 @@
         <p v-if="descripcion || alertaInfo.timestamp" class="text-sm text-gray-600 mt-1 leading-relaxed">
           <span class="font-medium text-gray-700">Alerta detectada:</span>
           {{ descripcion || formatearFecha(alertaInfo.timestamp) }}
-          <span v-if="descripcion && alertaInfo.timestamp" class="text-gray-400">
+          <span v-if="descripcion && alertaInfo.timestamp" class="text-gray-500">
             · {{ formatearFecha(alertaInfo.timestamp) }}
           </span>
         </p>
@@ -87,7 +87,7 @@
             <p class="text-2xl font-bold text-purple-800 mt-1">{{ estadisticas?.registros_anomalos || 0 }}</p>
           </div>
           <div class="bg-teal-50 rounded-lg p-4 border border-teal-200">
-            <p class="text-sm text-teal-600 font-medium">Normales</p>
+            <p class="text-sm text-teal-700 font-medium">Normales</p>
             <p class="text-2xl font-bold text-teal-800 mt-1">{{ estadisticas?.registros_normales || 0 }}</p>
           </div>
           <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">

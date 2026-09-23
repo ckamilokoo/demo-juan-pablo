@@ -59,7 +59,7 @@
                   <tbody>
                     <tr v-for="(a, i) in r.alertas.lista" :key="i" class="border-t border-slate-100">
                       <td class="px-3 py-2"><span class="rounded-full px-2 py-0.5 text-xs font-semibold" :class="CLASE_NIVEL[a.nivel]">{{ a.nivel }}</span></td>
-                      <td class="px-3 py-2">{{ a.sensor }} <span class="text-xs text-slate-400">({{ a.deteccion_n }}.ª)</span></td>
+                      <td class="px-3 py-2">{{ a.sensor }} <span class="text-xs text-slate-500">({{ a.deteccion_n }}.ª)</span></td>
                       <td class="px-3 py-2">{{ a.bomba }}</td>
                       <td class="px-3 py-2 whitespace-nowrap">{{ a.hora }}</td>
                       <td class="px-3 py-2 text-xs text-slate-600">{{ a.accion }}</td>

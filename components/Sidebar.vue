@@ -106,7 +106,7 @@
           </svg>
           <template v-if="!colapsado">
             Cerrar sesión
-            <span v-if="userEmail" class="ml-auto text-xs opacity-60 truncate max-w-[80px]" :title="userEmail">
+            <span v-if="userEmail" class="ml-auto text-xs truncate max-w-[80px]" :title="userEmail">
               {{ userEmail }}
             </span>
           </template>

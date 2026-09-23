@@ -8,6 +8,15 @@ export default {
     "./app.vue",
     "./error.vue",
   ],
+  // Clases de color construidas en tiempo de ejecución (config/sensoresConfig.ts,
+  // SensoresUnificado.vue): Tailwind no las ve escritas y no las generaba.
+  safelist: [
+    {
+      pattern:
+        /^(bg|text|border|border-l|ring)-(blue|purple|cyan|orange|pink|teal|slate|violet|fuchsia|indigo|rose|sky|green|amber|lime|emerald|gray)-(100|200|400|500|600|700|800)$/,
+      variants: ["hover"],
+    },
+  ],
   theme: {
     extend: {
       // Tokens shadcn-vue (formato HSL channels, pattern estandar Tailwind v3)

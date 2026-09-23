@@ -66,7 +66,7 @@
             v-for="ds in datasetsListos"
             :key="ds.label"
             class="px-3 py-1.5 rounded-full text-sm font-medium text-white flex items-center gap-2"
-            :style="{ backgroundColor: ds.sinDatos ? '#ef4444' : ds.color.border }"
+            :style="{ backgroundColor: ds.sinDatos ? '#ef4444' : ds.color.border, backgroundImage: 'linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35))' }"
           >
             <span v-if="!ds.sinDatos" class="text-lg">{{ ds.forma }}</span>
             <span v-else class="px-1.5 py-0.5 rounded-full bg-white/20 text-[10px] font-semibold uppercase tracking-wide">

@@ -17,15 +17,14 @@
             class="px-3 py-1 text-xs font-medium transition-colors focus:outline-none"
             :class="layout === opt.valor
               ? (isDarkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900')
-              : (isDarkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100')"
+              : 'text-gray-600 hover:bg-gray-100'"
           >
             {{ opt.texto }}
           </button>
         </div>
 
         <label
-          class="inline-flex items-center gap-1.5 text-xs cursor-pointer"
-          :class="isDarkMode ? 'text-gray-400' : 'text-gray-500'"
+          class="inline-flex items-center gap-1.5 text-xs cursor-pointer text-gray-600"
         >
           <input type="checkbox" v-model="fixPct" class="accent-amber-500" />
           fijar eje % en 0-100
@@ -35,9 +34,7 @@
       <button
         @click="refrescarDatos"
         class="px-3 py-1 text-sm font-medium rounded-lg shadow transition-colors flex items-center gap-1 focus:outline-none focus:ring-2"
-        :class="isDarkMode
-          ? 'bg-blue-900 bg-opacity-40 text-blue-300 hover:bg-blue-800 focus:ring-blue-600'
-          : 'bg-blue-100 text-blue-700 hover:bg-blue-200 focus:ring-blue-400'"
+        :class="'bg-blue-100 text-blue-800 hover:bg-blue-200 focus:ring-blue-400'"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />

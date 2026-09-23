@@ -132,7 +132,7 @@
             class="min-w-0 flex-1 rounded-full border px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-orange-300"
             :class="isDarkMode ? 'border-slate-700 bg-slate-800 text-white placeholder-slate-500' : 'border-slate-200 bg-white placeholder-slate-400'"
           />
-          <button type="submit" class="rounded-full bg-orange-500 px-3 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50" :disabled="!textoEscrito.trim()">
+          <button type="submit" class="rounded-full bg-orange-700 px-3 text-sm font-semibold text-white hover:bg-orange-800 disabled:opacity-50" :disabled="!textoEscrito.trim()">
             Enviar
           </button>
           <button
@@ -153,7 +153,7 @@
         <div v-else class="flex items-center justify-between gap-2 border-t px-3 py-2" :class="isDarkMode ? 'border-slate-700' : 'border-slate-100'">
           <button class="text-xs opacity-60 hover:underline hover:opacity-100" @click="limpiarConversacion">Borrar historial</button>
           <button
-            class="rounded-full bg-gradient-to-r from-orange-500 to-red-500 px-4 py-1.5 text-sm font-semibold text-white hover:from-orange-600 hover:to-red-600"
+            class="rounded-full bg-gradient-to-r from-orange-700 to-red-600 px-4 py-1.5 text-sm font-semibold text-white hover:from-orange-800 hover:to-red-700"
             @click="conectar"
           >
             {{ mensajes.some((m) => m.rol === 'usuario' || m.rol === 'agente') ? 'Retomar conversación' : 'Hablar con Atlas' }}

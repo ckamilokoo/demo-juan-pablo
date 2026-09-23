@@ -118,7 +118,7 @@
                 {{ alerta.alerta_aviso }}
               </span>
             </div>
-            <span class="text-xs" :class="isDarkMode ? 'text-gray-400' : 'text-gray-500'">
+            <span class="text-xs" :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
               {{ formatearFecha(alerta.tiempo_ejecucion) }}
             </span>
           </div>

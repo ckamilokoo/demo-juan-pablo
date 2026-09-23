@@ -41,7 +41,7 @@
             </select>
           </label>
           <button
-            class="w-full rounded-md bg-gradient-to-r from-orange-500 to-red-500 py-2 text-sm font-semibold text-white transition hover:from-orange-600 hover:to-red-600"
+            class="w-full rounded-md bg-gradient-to-r from-orange-700 to-red-600 py-2 text-sm font-semibold text-white transition hover:from-orange-800 hover:to-red-700"
             @click="disparar"
           >
             Disparar anomalía

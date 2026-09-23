@@ -363,22 +363,15 @@ const getAlertaClaseBadge = (tipo) => {
 };
 
 const getBotonAnomaliaClases = (tipo) => {
-  if (props.isDarkMode) {
-    switch (tipo) {
-      case 'CRITICAL': return 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:from-orange-500 hover:to-red-500 border border-orange-400';
-      case 'ALERT': return 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-500 hover:to-cyan-500 border border-blue-400';
-      case 'AVISO': return 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white hover:from-teal-500 hover:to-emerald-500 border border-teal-400';
-      default: return 'bg-gray-700 text-white hover:bg-gray-600 border border-gray-500';
-    }
-  } else {
-    switch (tipo) {
-      case 'CRITICAL': return 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 hover:scale-105';
-      case 'ALERT': return 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 hover:scale-105';
-      case 'AVISO': return 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white hover:from-teal-600 hover:to-emerald-600 hover:scale-105';
-      default: return 'bg-gray-600 text-white hover:bg-gray-700 hover:scale-105';
-    }
+  // Tonos 600-700: texto blanco con contraste ≥ 4.5:1 (con 500 quedaba ~3:1).
+  switch (tipo) {
+    case 'CRITICAL': return 'bg-gradient-to-r from-orange-700 to-red-600 text-white hover:from-orange-800 hover:to-red-700';
+    case 'ALERT': return 'bg-gradient-to-r from-blue-600 to-cyan-700 text-white hover:from-blue-700 hover:to-cyan-800';
+    case 'AVISO': return 'bg-gradient-to-r from-teal-700 to-emerald-700 text-white hover:from-teal-800 hover:to-emerald-800';
+    default: return 'bg-gray-600 text-white hover:bg-gray-700';
   }
 };
+
 
 // Función para navegar al gráfico de anomalía
 const verGraficoAnomalia = (alerta) => {
