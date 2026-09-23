@@ -56,7 +56,7 @@ En el proyecto origen **todo el acceso a datos pasa por `utils/authFetch.ts`**. 
 |---|---|
 | `utils/authFetch.ts` | Misma firma que el original; retorna `new Response(JSON.stringify(mock(url)))` |
 | `mock/simulador.ts` | Generador de series: seno + ruido + deriva, determinista por timestamp (sin saltos entre refetch) |
-| `mock/escenario.ts` | Guion de la demo: cada ~60 s inyecta anomalía (vibración sube → `clasificacion=1` → alerta crítica); rota bomba activa A → A/B → B |
+| `mock/escenario.ts` | Guion de la demo: botón oculto dispara anomalía (vibración sube → `clasificacion=1` → alerta crítica); rota bomba activa A → A/B → B |
 | `mock/fixtures/` | JSON reales capturados de producción como plantilla de formato |
 | `plugins/auth.js` | `$auth` fake con `userInfo` de usuario demo |
 
@@ -100,8 +100,16 @@ En el proyecto origen **todo el acceso a datos pasa por `utils/authFetch.ts`**. 
 - [ ] Badge de bomba activa cambia según el escenario.
 - [ ] Modo claro/oscuro funciona.
 
-## Decisiones pendientes
+## Decisiones (2026-09-23)
 
-1. **Branding**: ¿mantener "GM / Nueva Renca" o genericizar ("Planta Demo")? Recomendado genericizar si se mostrará a otros clientes.
-2. **Fase 5**: ¿incluir vista de Anomalías A/B?
-3. **Escenario**: ¿automático en loop o con botón oculto para disparar la anomalía en vivo durante la presentación?
+1. **Branding**: genericizar. Quitar "Generadora Metropolitana", logo GM y email corporativo (`pages/login.vue`, `components/Sidebar.vue`, `public/favicon.ico`). Las rutas internas `/gm-bitacoras` no se ven en UI y se mantienen.
+2. **Fase 5**: incluida — vista de Anomalías A/B.
+3. **Escenario**: botón oculto para disparar la anomalía en vivo durante la presentación (sin loop automático).
+
+## Avance
+
+- [x] **Fase 1 — Base**: archivos ✅ copiados, `package.json` limpio (solo deps usadas), `nuxt.config.ts` sin proxy ni Entra ID, `npm install` OK (0 vulnerabilidades). Imports pendientes: `utils/authFetch` (fase 2) y `composables/useTracking` (fase 3).
+- [ ] Fase 2 — Simulador
+- [ ] Fase 3 — Login + shell
+- [ ] Fase 4 — Tiempo real
+- [ ] Fase 5 — Anomalías A/B

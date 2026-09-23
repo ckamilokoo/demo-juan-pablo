@@ -10,7 +10,8 @@ Demo interactiva de una plataforma de **monitoreo predictivo industrial** para b
 - **Visión general**: panel de alertas (críticas / alertas / avisos), gráficos de eficiencia vs. potencia del sistema y por bomba, bitácoras operacionales.
 - **Señales**: 25 sensores por bomba (Bomba A y Bomba B), agrupados en Temperatura, Vibración y Otros, con puntos clasificados como normales o anómalos.
 - **Tiempo real**: los gráficos se actualizan cada pocos segundos.
-- **Escenario guionado**: periódicamente se inyecta una anomalía (p. ej. subida de vibración) que aparece en el gráfico y genera una alerta nueva; la bomba activa rota entre A, A/B y B.
+- **Escenario guionado**: un botón oculto inyecta una anomalía en vivo (p. ej. subida de vibración) que aparece en el gráfico y genera una alerta nueva; la bomba activa rota entre A, A/B y B.
+- **Análisis de anomalías** por bomba: detalle del sensor anómalo, contexto temporal y comparación con otros sensores.
 - Modo claro / oscuro y diseño responsive.
 
 ## Stack
@@ -83,7 +84,7 @@ utils/          authFetch (mock), utilidades de gráficos
 1. Iniciar sesión → mostrar el login 3D.
 2. **Visión general** → explicar alertas y eficiencia vs. potencia.
 3. **Señales Bomba A** → mostrar los gráficos avanzando en tiempo real.
-4. Esperar la anomalía programada → punto rojo en el gráfico + alerta nueva en el panel.
+4. Disparar la anomalía con el botón oculto → punto rojo en el gráfico + alerta nueva en el panel.
 5. Cambiar a **Bomba B** y alternar modo oscuro.
 
 ## Estado

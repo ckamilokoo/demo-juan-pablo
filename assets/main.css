@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tokens shadcn-vue (charts) — scoped a .dark, no toca el resto de la app.
+   Neutros calcados de la paleta ya usada en ChatBot/paneles (#1a1a1a, #333333, #E5E7EB).
+   chart-1/2 = Bomba A azul / Bomba B purpura (config/bombasConfig.ts) */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 20% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 12%;
+    --border: 220 13% 88%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --chart-1: 217 91% 60%;   /* Bomba A - blue-500 */
+    --chart-2: 271 81% 66%;  /* Bomba B - purple-500 */
+    --chart-3: 160 60% 45%;
+    --chart-4: 38 92% 55%;
+    --chart-5: 0 72% 60%;
+  }
+  .dark {
+    --background: 0 0% 10%;      /* #1a1a1a */
+    --foreground: 220 14% 91%;   /* #E5E7EB */
+    --card: 0 0% 20%;            /* #333333 */
+    --card-foreground: 220 14% 91%;
+    --border: 0 0% 27%;          /* #444444 */
+    --muted: 0 0% 20%;
+    --muted-foreground: 220 5% 69%; /* #B1B1B1 */
+    --chart-1: 217 91% 60%;
+    --chart-2: 271 81% 66%;
+    --chart-3: 160 55% 50%;
+    --chart-4: 38 92% 60%;
+    --chart-5: 0 72% 65%;
+  }
+}
